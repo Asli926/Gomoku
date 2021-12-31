@@ -1,6 +1,8 @@
 #ifndef GOMOKU_BOARD_H
 #define GOMOKU_BOARD_H
 
+#include <unordered_set>
+
 class Board {
 private:
     int size_;               /* width == height == size */
@@ -36,6 +38,8 @@ public:
 
     /* print the chess board. */
     int PrintBoard();
+
+    std::unordered_set<int> AvailableChildren(int dist=1);
 };
 
 #endif //GOMOKU_BOARD_H

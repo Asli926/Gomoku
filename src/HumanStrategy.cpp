@@ -7,4 +7,5 @@ bool HumanStrategy::GetStrategy(Board *board, int player_num, int *px, int *py) 
 
     printf("Please input the valid coordinates of next chess. (row col)\n");
     scanf("%d %d", px, py);
+    return true;
 }

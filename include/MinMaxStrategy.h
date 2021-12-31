@@ -14,7 +14,7 @@ using needle_map_t = std::unordered_map<chess_pattern_t, std::regex>;
 class MinMaxStrategy : public Strategy{
 private:
 //    int EvalLevelPoints(Board& board, int player_num);
-    std::pair<int, int> EvalTotalPoints(Board board, int player_num, int cur_depth);
+    std::pair<int, int> EvalTotalPoints(Board board, int player_num, int cur_depth, int alpha, int beta);
     static char Int2Char(int);
     static int Diagonal(Board& board, const int& x, const int& y, std::string& s, const int& boardSize);
     static int AntiDiagonal(Board& board, const int& x, const int& y, std::string& s, const int& boardSize);
@@ -26,7 +26,7 @@ private:
 public:
     int EvalLevelPoints(Board& board, int player_num);
     bool GetStrategy(Board *board, int player_num, int *px, int *py);
-    MinMaxStrategy(int _total_depth=3);
+    MinMaxStrategy(int _total_depth=4);
 };
 
 #endif //GOMOKU_MINMAXSTRATEGY_H

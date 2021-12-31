@@ -118,7 +118,27 @@ int Board::PrintBoard() {
         }
         printf("\n");
     }
+    return 0;
 }
 
+std::unordered_set<int> Board::AvailableChildren(int dist) {
+    std::unordered_set<int> availChildren;
+    
+    for (int i = 0; i < size_; i ++) {
+        for (int j = 0; j < size_; j ++) {
+
+            // Most-likely new chess puts around the existing ones.
+            if (GetChess(i, j) != 0) {
+                for (int r = std::max(i - dist, 0); r <= std::min(i + dist, size_ - 1); r ++) {
+                    for (int c = std::max(j - dist, 0); c <= std::min(j + dist, size_ - 1); c ++) {
+                        if (GetChess(r, c) == 0) availChildren.insert(r * size_ + c);
+                    }
+                }
+            }
+
+        }
+    }
+    return availChildren;
+}
 
 

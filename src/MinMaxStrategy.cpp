@@ -1,7 +1,7 @@
 #include "../include/MinMaxStrategy.h"
 #include <string>
-#include <limits>
-#include <iostream>
+//#include <limits>
+//#include <iostream>
 
 
 MinMaxStrategy::MinMaxStrategy(int _total_depth) {
@@ -136,65 +136,54 @@ int MinMaxStrategy::EvalLevelPoints(Board& board, int player_num) {
 
 
 
-std::pair<int, int> MinMaxStrategy::EvalTotalPoints(Board board, int player_num, int cur_depth) {
+std::pair<int, int> MinMaxStrategy::EvalTotalPoints(Board board, int player_num, int cur_depth, int alpha, int beta) {
     int opp_player_num = 1;
     if (player_num == 1) opp_player_num = 2;
-    int score, location;
+    int score, location, val;
     int boardSize = board.GetSize();
+
     // std::cout << total_depth << '\n';
     if (board.IsFinish() || cur_depth == total_depth) {
         return std::pair<int, int>{0, EvalLevelPoints(board, player_num) - EvalLevelPoints(board, opp_player_num)};
     }
 
-    std::unordered_map<int, int> loc_score_map;
-    for (int i = 0; i < boardSize; i ++) {
-        for (int j = 0; j < boardSize; j ++) {
-
-            // Most-likely new chess puts around the existing ones.
-            if (board.GetChess(i, j) != 0) {
-                 for (int r = std::max(i - 2, 0); r <= std::min(i + 2, boardSize - 1); r ++) {
-                    for (int c = std::max(j - 2, 0); c <= std::min(j + 2, boardSize - 1); c ++) {
-                        // if not visited, store it.
-                        if (board.GetChess(r, c) == 0 && loc_score_map.find(boardSize * r + c) == loc_score_map.end()) {
-                            Board b{board};
-                            if (cur_depth % 2 == 0) b.PlaceChess(player_num, r, c);
-                            else                    b.PlaceChess(opp_player_num, r, c);
-                            loc_score_map[r * boardSize + c] = EvalTotalPoints(b, player_num, cur_depth + 1).second;
-                        }
-                    }
-                }
-            }
-
-        }
-    }
-                                                    // MAX layer
+    /* IF AI's turn */
     if (cur_depth % 2 == 0) {
-        score = INT_MIN;
-        for (const auto& n : loc_score_map) {
-            if (n.second > score) {
-                location = n.first;
-                score = n.second;
+        for (const auto &loc : board.AvailableChildren()) {
+            int r = loc / boardSize, c = loc % boardSize;
+            Board b{board};
+            if (cur_depth % 2 == 0) b.PlaceChess(player_num, r, c);
+            else b.PlaceChess(opp_player_num, r, c);
+            val = EvalTotalPoints(b, player_num, cur_depth + 1, alpha, beta).second;
+            if (val > alpha) {
+                alpha = val;
+                location = r * boardSize + c;
             }
+            if (alpha >= beta) break;
         }
-                                                    // MIN layer
+        return std::pair<int, int>{location, alpha};
     } else {
-        score = INT_MAX;
-        for (const auto& n : loc_score_map) {
-            if (n.second < score) {
-                location = n.first;
-                score = n.second;
+        for (const auto &loc : board.AvailableChildren()) {
+            int r = loc / boardSize, c = loc % boardSize;
+            Board b{board};
+            if (cur_depth % 2 == 0) b.PlaceChess(player_num, r, c);
+            else b.PlaceChess(opp_player_num, r, c);
+            val = EvalTotalPoints(b, player_num, cur_depth + 1, alpha, beta).second;
+            if (val < beta) {
+                beta = val;
+                location = r * boardSize + c;
             }
+            if (alpha >= beta) break;
         }
+        return std::pair<int, int>{location, beta};
     }
-
-    return std::pair<int, int>{location, score};
 }
 
 
 bool MinMaxStrategy::GetStrategy(Board* board, int player_num, int *px, int *py) {
     int boardSize = board->GetSize();
     // int total_depth = 2;
-    std::pair<int, int> nxt_step = EvalTotalPoints(*board, player_num, 0);
+    std::pair<int, int> nxt_step = EvalTotalPoints(*board, player_num, 0, INT_MIN, INT_MAX);
 
     *px = nxt_step.first / boardSize;
     *py = nxt_step.first % boardSize;
