@@ -7,9 +7,13 @@ private:
     int *board_;             /* chess board: 1d array */
     int last_chess_row_;     /* row of last chess */
     int last_chess_col_;     /* column of last chess */
+    int chess_count;         /* # of placed chess */
     int CountByDirection_(int dx, int dy, int player);
 public:
     Board(int size);
+
+    Board(const Board&);
+
     ~Board();
 
     /* Get size of the board */
@@ -25,7 +29,7 @@ public:
     int PlaceChess(int player_num, int x, int y);
 
     /* return true if someone win. notice that this function must be called after each PlaceChess */
-    bool IsFinish();
+    int IsFinish();
 
     /* Is (x, y) within the boundary. */
     bool IsValid(int x, int y);

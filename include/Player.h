@@ -6,12 +6,11 @@
 
 class Player {
 private:
-    bool is_human_;
     int player_num_;
     Board *pboard_;
     Strategy *strategy_;
 public:
-    Player(bool is_human, int player_num, Board *board, Strategy *strategy);
+    Player(int player_num, Board *board, Strategy *strategy);
     int NextChess();
 };
 

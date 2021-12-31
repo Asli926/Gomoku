@@ -2,4 +2,5 @@
 
 int main() {
     test_game();
+//    test_score();
 }
