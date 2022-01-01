@@ -1,6 +1,7 @@
 #ifndef GOMOKU_BOARD_H
 #define GOMOKU_BOARD_H
 
+#include <vector>
 #include <unordered_set>
 
 class Board {
@@ -10,6 +11,9 @@ private:
     int last_chess_row_;     /* row of last chess */
     int last_chess_col_;     /* column of last chess */
     int chess_count;         /* # of placed chess */
+
+    unsigned int hash_value[2]; /* hash value of two players */
+
     int CountByDirection_(int dx, int dy, int player);
 public:
     Board(int size);
@@ -39,7 +43,15 @@ public:
     /* print the chess board. */
     int PrintBoard();
 
+    /* Get next possible moves */
     std::unordered_set<int> AvailableChildren(int dist=1);
+
+    /* revert one chess (dangerous method: do not call this method of the game board)*/
+    int Revert(int x, int y);
+
+    /* getter and setter of hash value */
+    unsigned int GetHash(int player_num);
+    int SetHash(int player_num, unsigned int new_hash);
 };
 
 #endif //GOMOKU_BOARD_H

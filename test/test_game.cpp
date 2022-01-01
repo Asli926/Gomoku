@@ -3,17 +3,25 @@
 #include "../include/RandomStrategy.h"
 #include "../include/HumanStrategy.h"
 #include "../include/MinMaxStrategy.h"
+#include "../include/HeuristicMinMaxStrategy.h"
 #include <cstdio>
+#include <cstdlib>
 
 int test_game() {
-    Board board{10};
+    int board_size = 10;
     RandomStrategy strategy{};
     HumanStrategy hmStrategy{};
     MinMaxStrategy mmStrategy{};
+    HeuristicMinMaxStrategy hmmStrategy{};
+    hmmStrategy.SetBoardSize(board_size);
+
+    Board board{board_size};
+
+
     int finished;
 
     Player player1{1, &board, &hmStrategy};
-    Player player2{2, &board, &mmStrategy};
+    Player player2{2, &board, &hmmStrategy};
 //    board.PlaceChess(1, 5, 5);
 //    board.PlaceChess(2, 7, 7);
 
