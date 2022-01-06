@@ -38,8 +38,7 @@ private:
 
 public:
     bool GetStrategy(Board *board, int player_num, int *px, int *py);
-    int SetBoardSize(int);
-    HeuristicMinMaxStrategy(int _total_depth=6);
+    HeuristicMinMaxStrategy(int _total_depth=5);
 };
 
 #endif //GOMOKU_HEURISTICMINMAXSTRATEGY_H

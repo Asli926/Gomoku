@@ -13,7 +13,6 @@ int test_game() {
     HumanStrategy hmStrategy{};
     MinMaxStrategy mmStrategy{};
     HeuristicMinMaxStrategy hmmStrategy{};
-    hmmStrategy.SetBoardSize(board_size);
 
     Board board{board_size};
 

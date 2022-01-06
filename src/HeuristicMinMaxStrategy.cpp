@@ -30,13 +30,13 @@ HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
     total_depth = _total_depth;
 }
 
-int HeuristicMinMaxStrategy::SetBoardSize(int board_size) {
-    for (int i = 0; i < board_size * board_size; i ++) {
-        player1_rd_tb.emplace_back(randu32());
-        player2_rd_tb.emplace_back(randu32());
-    }
-    return 0;
-}
+//int HeuristicMinMaxStrategy::SetBoardSize(int board_size) {
+//    for (int i = 0; i < board_size * board_size; i ++) {
+//        player1_rd_tb.emplace_back(randu32());
+//        player2_rd_tb.emplace_back(randu32());
+//    }
+//    return 0;
+//}
 
 /* only translate 0 - 9 to its char type */
 inline char HeuristicMinMaxStrategy::Int2Char(int num) {
@@ -64,11 +64,11 @@ std::array<std::string, 4> HeuristicMinMaxStrategy::GetLinesByChess(Board& board
         lines[2] += Int2Char(board.GetChess(i, j));
     }
 
-    int i = r, j = c;
-    for (; i >= 0 && j < board_size; i --, j ++);
-    i ++; j --;
-    // int dr = std::min(std::min(board_size - 1, r + c) - r, c);
-    for (; i < board_size && j >= 0; i ++, j --) {
+//    int i = r, j = c;
+//    for (; i >= 0 && j < board_size; i --, j ++);
+//    i ++; j --;
+    int dr = std::min(r, board_size - 1 - c);
+    for (int i = r - dr, j = c + dr; i < board_size && j >= 0; i ++, j --) {
         lines[3] += Int2Char(board.GetChess(i, j));
     }
 
@@ -221,9 +221,9 @@ std::pair<int, int> HeuristicMinMaxStrategy::EvalTotalPoints(
     int opp_player_num = 3 - player_num;
     int location, val, result;
     int boardSize = board.GetSize();
-    int new_board_score;
 
     if (board.IsFinish() || cur_depth == total_depth) {
+        assert(score == (EvaluateBoard(board, player_num) - EvaluateBoard(board, opp_player_num)));
         return std::pair<int, int>{0, score};
     }
 
@@ -236,8 +236,8 @@ std::pair<int, int> HeuristicMinMaxStrategy::EvalTotalPoints(
             Board b{board};
             if (cur_depth % 2 == 0) PlaceWrapper(b, player_num, r, c);
             else PlaceWrapper(b, opp_player_num, r, c);
-            new_board_score = score + dscore;
-            val = EvalTotalPoints(b, player_num, cur_depth + 1, alpha, beta, new_board_score).second;
+
+            val = EvalTotalPoints(b, player_num, cur_depth + 1, alpha, beta, score + dscore).second;
             if (val > result) {
                 location = r * boardSize + c;
                 result = val;
@@ -256,9 +256,8 @@ std::pair<int, int> HeuristicMinMaxStrategy::EvalTotalPoints(
 
             if (cur_depth % 2 == 0) PlaceWrapper(b,player_num, r, c);
             else PlaceWrapper(b, opp_player_num, r, c);
-            new_board_score = score + dscore;
 
-            val = EvalTotalPoints(b, player_num, cur_depth + 1, alpha, beta, new_board_score).second;
+            val = EvalTotalPoints(b, player_num, cur_depth + 1, alpha, beta, score + dscore).second;
             if (val < result) {
                 location = r * boardSize + c;
                 result = val;
