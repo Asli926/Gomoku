@@ -3,9 +3,9 @@
 #include <cstring>
 #include "../include/Board.h"
 
-unsigned int brandu32() {
-    return (unsigned int)(rand() | (rand() << 15));
-}
+//unsigned int brandu32() {
+//    return (unsigned int)(rand() | (rand() << 15));
+//}
 
 Board::Board(int size) {
     size_ = size;
@@ -21,7 +21,7 @@ Board::Board(const Board& board) {
     last_chess_row_ = board.last_chess_row_;
     last_chess_col_ = board.last_chess_col_;
     chess_count = board.chess_count;
-    hash_value[0] = board.hash_value[0]; hash_value[1] = board.hash_value[1];
+    // hash_value[0] = board.hash_value[0]; hash_value[1] = board.hash_value[1];
 }
 
 Board::~Board() {
@@ -32,22 +32,13 @@ int Board::GetSize() {
     return size_;
 }
 
-unsigned int Board::GetHash(int player_num) {
-    return hash_value[player_num - 1];
-}
-
-int Board::SetHash(int player_num, unsigned int new_hash) {
-    hash_value[player_num - 1] = new_hash;
-    return 0;
-}
-
 int Board::GetChess(int row, int col) {
     return board_[size_ * row + col];
 }
 
 int Board::Initialize() {
     last_chess_row_ = last_chess_col_ = -1;
-    hash_value[0] = brandu32(); hash_value[1] = brandu32();
+    // hash_value[0] = brandu32(); hash_value[1] = brandu32();
     chess_count = 0;
 
     for (int i = 0; i < size_ * size_; i ++) {

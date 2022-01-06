@@ -22,10 +22,12 @@ private:
     std::vector<unsigned int> player2_rd_tb;
     std::unordered_map<unsigned int, int> board_score;
 
-    std::pair<int, int> EvalTotalPoints(Board board, int player_num, int cur_depth, int alpha, int beta);
-    int EvaluateChess(Board& board, int player_num, int r, int c);
+    // int UpdateScore(Board& board, int player_num, int score, int r, int c);
+    std::array<std::string, 4> GetLinesByChess(Board& board, int r, int c);
+    std::pair<int, int> EvalTotalPoints(Board board, int player_num, int cur_depth, int alpha, int beta, int score);
+    int EvaluateChessByLines(const std::array<std::string, 4>&, int);
     int EvaluateBoard(Board& board, int player_num);
-    std::vector<int> HeuristicNextMoves(Board& board, int player_num, int max_num=10);
+    std::vector<std::pair<int, int>> HeuristicNextMoves(Board& board, int player_num, bool max_layer);
     static char Int2Char(int);
     static int Diagonal(Board& board, const int& x, const int& y, std::string& s, const int& boardSize);
     static int AntiDiagonal(Board& board, const int& x, const int& y, std::string& s, const int& boardSize);

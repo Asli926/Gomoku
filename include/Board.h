@@ -48,10 +48,6 @@ public:
 
     /* revert one chess (dangerous method: do not call this method of the game board)*/
     int Revert(int x, int y);
-
-    /* getter and setter of hash value */
-    unsigned int GetHash(int player_num);
-    int SetHash(int player_num, unsigned int new_hash);
 };
 
 #endif //GOMOKU_BOARD_H
