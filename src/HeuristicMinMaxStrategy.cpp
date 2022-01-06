@@ -30,14 +30,6 @@ HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
     total_depth = _total_depth;
 }
 
-//int HeuristicMinMaxStrategy::SetBoardSize(int board_size) {
-//    for (int i = 0; i < board_size * board_size; i ++) {
-//        player1_rd_tb.emplace_back(randu32());
-//        player2_rd_tb.emplace_back(randu32());
-//    }
-//    return 0;
-//}
-
 /* only translate 0 - 9 to its char type */
 inline char HeuristicMinMaxStrategy::Int2Char(int num) {
     return (char) (num - 0 + (int)('0'));
@@ -64,9 +56,6 @@ std::array<std::string, 4> HeuristicMinMaxStrategy::GetLinesByChess(Board& board
         lines[2] += Int2Char(board.GetChess(i, j));
     }
 
-//    int i = r, j = c;
-//    for (; i >= 0 && j < board_size; i --, j ++);
-//    i ++; j --;
     int dr = std::min(r, board_size - 1 - c);
     for (int i = r - dr, j = c + dr; i < board_size && j >= 0; i ++, j --) {
         lines[3] += Int2Char(board.GetChess(i, j));
@@ -223,7 +212,6 @@ std::pair<int, int> HeuristicMinMaxStrategy::EvalTotalPoints(
     int boardSize = board.GetSize();
 
     if (board.IsFinish() || cur_depth == total_depth) {
-        assert(score == (EvaluateBoard(board, player_num) - EvaluateBoard(board, opp_player_num)));
         return std::pair<int, int>{0, score};
     }
 

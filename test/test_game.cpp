@@ -8,7 +8,7 @@
 #include <cstdlib>
 
 int test_game() {
-    int board_size = 10;
+    int board_size = 15;
     RandomStrategy strategy{};
     HumanStrategy hmStrategy{};
     MinMaxStrategy mmStrategy{};
