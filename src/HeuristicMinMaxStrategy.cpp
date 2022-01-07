@@ -1,28 +1,34 @@
 #include "../include/HeuristicMinMaxStrategy.h"
+#include "../include/pattern_search.h"
 #include <string>
 #include <array>
 #include <functional>
 
 HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
     player1_needle_list = needle_list_t{
-        boost::regex{"11111"}, boost::regex{"011110"}, boost::regex{"011100"},
-        boost::regex{"001110"}, boost::regex{"011010"}, boost::regex{"010110"},
-        boost::regex{"11110"}, boost::regex{"01111"}, boost::regex{"11011"},
-        boost::regex{"10111"}, boost::regex{"11101"}, boost::regex{"001100"},
-        boost::regex{"001010"}, boost::regex{"010100"}, boost::regex{"000100"},
-        boost::regex{"001000"}
+        "11111", "011110", "011100", "001110", "011010",
+        "010110", "11110", "01111", "11011", "10111",
+        "11101", "001100", "001010", "010100", "000100", "001000"
     };
+
+    player1_dfa_list = dfa_list_t{};
+    for (const auto& needle : player1_needle_list) {
+        player1_dfa_list.emplace_back(construct_nxt(needle));
+    }
 
     player2_needle_list = needle_list_t{
-            boost::regex{"22222"}, boost::regex{"022220"}, boost::regex{"022200"},
-            boost::regex{"002220"}, boost::regex{"012020"}, boost::regex{"020220"},
-            boost::regex{"22220"}, boost::regex{"02222"}, boost::regex{"22022"},
-            boost::regex{"20222"}, boost::regex{"22202"}, boost::regex{"002200"},
-            boost::regex{"002020"}, boost::regex{"020200"}, boost::regex{"000200"},
-            boost::regex{"002000"}
+            "22222", "022220", "022200", "002220", "012020",
+            "020220", "22220", "02222", "22022", "20222",
+            "22202", "002200", "002020", "020200", "000200", "002000"
     };
 
+    player2_dfa_list = dfa_list_t{};
+    for (const auto& needle : player2_needle_list) {
+        player2_dfa_list.emplace_back(construct_nxt(needle));
+    }
+
     player_needle_lists = std::vector<needle_list_t>{player1_needle_list, player2_needle_list};
+    player_dfa_lists = std::vector<dfa_list_t>{player1_dfa_list, player2_dfa_list};
 
     score_map = std::vector<int>{50000, 4320, 720, 720, 720, 720, 720, 720, 720,
                                  720, 720, 120, 120, 120, 20, 20};
@@ -68,22 +74,27 @@ int HeuristicMinMaxStrategy::EvaluateChessByLines(const std::array<std::string, 
     int res = 0;
     for (const auto& li: lines) {
         for (int nx = 0; nx < player_needle_lists[player_num - 1].size(); nx ++) {
-            const auto& n = player_needle_lists[player_num - 1][nx];
-            auto words_begin = boost::sregex_iterator(li.begin(), li.end(), n);
-            auto words_end = boost::sregex_iterator();
-            res += (int)std::distance(words_begin, words_end) * score_map[nx];
+            res += match_count(li, player_needle_lists[player_num - 1][nx],
+                               player_dfa_lists[player_num - 1][nx]) * score_map[nx];
+
+//            const auto& n = player_needle_lists[player_num - 1][nx];
+//            auto words_begin = boost::sregex_iterator(li.begin(), li.end(), n);
+//            auto words_end = boost::sregex_iterator();
+//            res += (int)std::distance(words_begin, words_end) * score_map[nx];
         }
     }
 
     return res;
 }
 
-int HeuristicMinMaxStrategy::CountPoints(const needle_list_t & player_needle_list, const std::string& s, int& level_points) {
-    for (int i = 0; i < player_needle_list.size(); i ++) {
-        const auto& n = player_needle_list[i];
-        auto words_begin = boost::sregex_iterator(s.begin(), s.end(), n);
-        auto words_end = boost::sregex_iterator();
-        level_points += (int)std::distance(words_begin, words_end) * score_map[i];
+int HeuristicMinMaxStrategy::CountPoints(int player_num, const std::string& s, int& level_points) {
+    for (int i = 0; i < player1_needle_list.size(); i ++) {
+//        const auto& n = player_needle_list[i];
+//        auto words_begin = boost::sregex_iterator(s.begin(), s.end(), n);
+//        auto words_end = boost::sregex_iterator();
+//        level_points += (int)std::distance(words_begin, words_end) * score_map[i];
+        level_points += match_count(s, player_needle_lists[player_num - 1][i],
+                                    player_dfa_lists[player_num - 1][i]) * score_map[i];
     }
     return 0;
 }
@@ -122,7 +133,7 @@ int HeuristicMinMaxStrategy::EvaluateBoard(Board &board, int player_num) {
             s += Int2Char(board.GetChess(r, c));
         }
         // regular exp (enumerate each needle of myself)
-        CountPoints(player_needle_lists[player_num - 1], s, level_points);
+        CountPoints(player_num, s, level_points);
     }
 
     // From left to right.
@@ -132,31 +143,31 @@ int HeuristicMinMaxStrategy::EvaluateBoard(Board &board, int player_num) {
             s += Int2Char(board.GetChess(r, c));
         }
         // regular exp (enumerate each needle of myself)
-        CountPoints(player_needle_lists[player_num - 1], s, level_points);
+        CountPoints(player_num, s, level_points);
     }
 
     // Diagonal.
     for (int r = 0; r < boardSize; r ++) {
         s = "";
         Diagonal(board, r, 0, s, boardSize);
-        CountPoints(player_needle_lists[player_num - 1], s, level_points);
+        CountPoints(player_num, s, level_points);
     }
     for (int c = 1; c < boardSize; c ++) {
         s = "";
         Diagonal(board, 0, c, s, boardSize);
-        CountPoints(player_needle_lists[player_num - 1], s, level_points);
+        CountPoints(player_num, s, level_points);
     }
 
     // Anti-diagonal.
     for (int c = 0; c < boardSize; c ++) {
         s = "";
         AntiDiagonal(board, 0, c, s, boardSize);
-        CountPoints(player_needle_lists[player_num - 1], s, level_points);
+        CountPoints(player_num, s, level_points);
     }
     for (int r = 1; r < boardSize; r ++) {
         s = "";
         AntiDiagonal(board, r, boardSize - 1, s, boardSize);
-        CountPoints(player_needle_lists[player_num - 1], s, level_points);
+        CountPoints(player_num, s, level_points);
     }
 
     return level_points;
@@ -260,7 +271,6 @@ std::pair<int, int> HeuristicMinMaxStrategy::EvalTotalPoints(
 
 bool HeuristicMinMaxStrategy::GetStrategy(Board* board, int player_num, int *px, int *py) {
     int boardSize = board->GetSize();
-    board_score.clear();
 
     int score = EvaluateBoard(*board, player_num) - EvaluateBoard(*board, 3 - player_num);
     std::pair<int, int> nxt_step = EvalTotalPoints(*board, player_num, 0, INT_MIN, INT_MAX, score);

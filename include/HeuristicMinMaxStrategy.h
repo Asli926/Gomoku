@@ -3,24 +3,24 @@
 
 #include <unordered_map>
 // #include <regex>
-#include <boost/regex.hpp>
+//#include <boost/regex.hpp>
 #include "../include/Strategy.h"
 
 
-using needle_list_t = std::vector<boost::regex>;
+using needle_list_t = std::vector<std::string>;
+using dfa_t = std::vector<int>;
+using dfa_list_t = std::vector<dfa_t>;
 
 class HeuristicMinMaxStrategy : public Strategy{
 private:
     needle_list_t player1_needle_list;
     needle_list_t player2_needle_list;
+    dfa_list_t player1_dfa_list;
+    dfa_list_t player2_dfa_list;
     std::vector<needle_list_t> player_needle_lists;
+    std::vector<dfa_list_t> player_dfa_lists;
     std::vector<int> score_map;
     int total_depth;
-
-    // random table for hash
-    std::vector<unsigned int> player1_rd_tb;
-    std::vector<unsigned int> player2_rd_tb;
-    std::unordered_map<unsigned int, int> board_score;
 
     // int UpdateScore(Board& board, int player_num, int score, int r, int c);
     std::array<std::string, 4> GetLinesByChess(Board& board, int r, int c);
@@ -31,14 +31,14 @@ private:
     static char Int2Char(int);
     static int Diagonal(Board& board, const int& x, const int& y, std::string& s, const int& boardSize);
     static int AntiDiagonal(Board& board, const int& x, const int& y, std::string& s, const int& boardSize);
-    int CountPoints(const needle_list_t & player_needle_list, const std::string& s, int& level_points);
+    int CountPoints(int player_num, const std::string& s, int& level_points);
 
     int PlaceWrapper(Board& board, int player_num, int r, int c);
     int RevertWrapper(Board& board, int r, int c);
 
 public:
     bool GetStrategy(Board *board, int player_num, int *px, int *py);
-    HeuristicMinMaxStrategy(int _total_depth=6);
+    HeuristicMinMaxStrategy(int _total_depth=7);
 };
 
 #endif //GOMOKU_HEURISTICMINMAXSTRATEGY_H
