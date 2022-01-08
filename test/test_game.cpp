@@ -4,8 +4,10 @@
 #include "../include/HumanStrategy.h"
 #include "../include/MinMaxStrategy.h"
 #include "../include/HeuristicMinMaxStrategy.h"
+#include "../include/ParallelHeuristicMinMax.h"
 #include <cstdio>
 #include <cstdlib>
+#include <omp.h>
 
 int test_game() {
     int board_size = 15;
@@ -13,6 +15,7 @@ int test_game() {
     HumanStrategy hmStrategy{};
     MinMaxStrategy mmStrategy{};
     HeuristicMinMaxStrategy hmmStrategy{};
+    ParallelHeuristicMinMax phmmStrategy{};
 
     Board board{board_size};
 
@@ -20,7 +23,9 @@ int test_game() {
     int finished;
 
     Player player1{1, &board, &hmStrategy};
-    Player player2{2, &board, &hmmStrategy};
+    Player player2{2, &board, &phmmStrategy};
+    omp_set_nested(1);
+
 //    board.PlaceChess(1, 5, 5);
 //    board.PlaceChess(2, 7, 7);
 
@@ -35,7 +40,12 @@ int test_game() {
             printf("the board is full, teams are tying!\n");
             break;
         }
+        double start = omp_get_wtime();
         if (player2.NextChess() != 0) printf("player2 x or y wrong!\n");
+        double end = omp_get_wtime();
+        double time = end - start;
+        printf("time: %.5f \n", time);
+
         board.PrintBoard();
         finished = board.IsFinish();
         if (finished == 1) {

@@ -4,6 +4,12 @@
 #include <vector>
 #include <unordered_set>
 
+struct int_hash {
+    inline std::size_t operator()(const int & v) const {
+        return v;
+    }
+};
+
 class Board {
 private:
     int size_;               /* width == height == size */
@@ -44,7 +50,7 @@ public:
     int PrintBoard();
 
     /* Get next possible moves */
-    std::unordered_set<int> AvailableChildren(int dist=1);
+    std::unordered_set<int, int_hash> AvailableChildren(int dist=1);
 
     /* revert one chess (dangerous method: do not call this method of the game board)*/
     int Revert(int x, int y);

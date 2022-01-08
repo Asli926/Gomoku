@@ -1,14 +1,17 @@
-#include "../include/HeuristicMinMaxStrategy.h"
+#include "../include/ParallelHeuristicMinMax.h"
 #include "../include/pattern_search.h"
 #include <string>
 #include <array>
 #include <functional>
+#include <climits>
+#include <algorithm>
+#include <omp.h>
 
-HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
+ParallelHeuristicMinMax::ParallelHeuristicMinMax(int _total_depth) {
     player1_needle_list = needle_list_t{
-        "11111", "011110", "011100", "001110", "011010",
-        "010110", "11110", "01111", "11011", "10111",
-        "11101", "001100", "001010", "010100", "000100", "001000"
+            "11111", "011110", "011100", "001110", "011010",
+            "010110", "11110", "01111", "11011", "10111",
+            "11101", "001100", "001010", "010100", "000100", "001000"
     };
 
     player1_dfa_list = dfa_list_t{};
@@ -37,11 +40,11 @@ HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
 }
 
 /* only translate 0 - 9 to its char type */
-inline char HeuristicMinMaxStrategy::Int2Char(int num) {
+inline char ParallelHeuristicMinMax::Int2Char(int num) {
     return (char) (num - 0 + (int)('0'));
 }
 
-std::array<std::string, 4> HeuristicMinMaxStrategy::GetLinesByChess(Board& board, int r, int c) {
+std::array<std::string, 4> ParallelHeuristicMinMax::GetLinesByChess(Board& board, int r, int c) {
     int board_size = board.GetSize();
     std::array<std::string, 4> lines;
     for (int i = 0; i < 4; i ++) lines[i].reserve(board_size);
@@ -57,8 +60,8 @@ std::array<std::string, 4> HeuristicMinMaxStrategy::GetLinesByChess(Board& board
 
     int min_rc = std::min(r, c);
     for (int i = r - min_rc, j = c - min_rc;
-    i < board_size && j < board_size;
-    i ++, j ++) {
+         i < board_size && j < board_size;
+         i ++, j ++) {
         lines[2] += Int2Char(board.GetChess(i, j));
     }
 
@@ -70,7 +73,7 @@ std::array<std::string, 4> HeuristicMinMaxStrategy::GetLinesByChess(Board& board
     return lines;
 }
 
-int HeuristicMinMaxStrategy::EvaluateChessByLines(const std::array<std::string, 4>& lines, int player_num) {
+int ParallelHeuristicMinMax::EvaluateChessByLines(const std::array<std::string, 4>& lines, int player_num) {
     int res = 0;
     for (const auto& li: lines) {
         for (int nx = 0; nx < player_needle_lists[player_num - 1].size(); nx ++) {
@@ -87,7 +90,7 @@ int HeuristicMinMaxStrategy::EvaluateChessByLines(const std::array<std::string, 
     return res;
 }
 
-int HeuristicMinMaxStrategy::CountPoints(int player_num, const std::string& s, int& level_points) {
+int ParallelHeuristicMinMax::CountPoints(int player_num, const std::string& s, int& level_points) {
     for (int i = 0; i < player1_needle_list.size(); i ++) {
 //        const auto& n = player_needle_list[i];
 //        auto words_begin = boost::sregex_iterator(s.begin(), s.end(), n);
@@ -99,7 +102,7 @@ int HeuristicMinMaxStrategy::CountPoints(int player_num, const std::string& s, i
     return 0;
 }
 
-int HeuristicMinMaxStrategy::Diagonal(Board& board, const int& x, const int& y, std::string& s, const int& boardSize) {
+int ParallelHeuristicMinMax::Diagonal(Board& board, const int& x, const int& y, std::string& s, const int& boardSize) {
     int c = y, r = x;
     while (r < boardSize && c < boardSize) {
         s += Int2Char(board.GetChess(r, c));
@@ -109,7 +112,7 @@ int HeuristicMinMaxStrategy::Diagonal(Board& board, const int& x, const int& y, 
     return 0;
 }
 
-int HeuristicMinMaxStrategy::AntiDiagonal(Board& board, const int& x, const int& y, std::string& s, const int& boardSize) {
+int ParallelHeuristicMinMax::AntiDiagonal(Board& board, const int& x, const int& y, std::string& s, const int& boardSize) {
     int r = x, c = y;
     while (r < boardSize && c >= 0) {
         s += Int2Char(board.GetChess(r, c));
@@ -119,7 +122,7 @@ int HeuristicMinMaxStrategy::AntiDiagonal(Board& board, const int& x, const int&
     return 0;
 }
 
-int HeuristicMinMaxStrategy::EvaluateBoard(Board &board, int player_num) {
+int ParallelHeuristicMinMax::EvaluateBoard(Board &board, int player_num) {
     int boardSize = board.GetSize();
     int level_points = 0;
 
@@ -173,7 +176,7 @@ int HeuristicMinMaxStrategy::EvaluateBoard(Board &board, int player_num) {
     return level_points;
 }
 
-std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Board& board, int player_num, int cur_depth) {
+std::vector<std::pair<int, int>> ParallelHeuristicMinMax::HeuristicNextMoves(Board& board, int player_num, int cur_depth) {
     Board tmp_board{board};
     int board_size = board.GetSize();
     int opp_player_num = 3 - player_num;
@@ -188,7 +191,7 @@ std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Boa
 
         lines = GetLinesByChess(tmp_board, mr, mc);
         old_chess_score = EvaluateChessByLines(lines, player_num) -
-                            EvaluateChessByLines(lines, opp_player_num);
+                          EvaluateChessByLines(lines, opp_player_num);
 
         if (cur_depth % 2 == 0)
             tmp_board.PlaceChess(player_num, mr, mc);
@@ -211,26 +214,61 @@ std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Boa
     else
         std::sort(possible_moves.begin(), possible_moves.end(), std::less<>());
 
-    for (int i = 0; i < std::min(board_size, (int)possible_moves.size()); i ++) {
+    for (int i = 0; i < std::min(10, (int)possible_moves.size()); i ++) {
         res.emplace_back(possible_moves[i]);
     }
     return res;
 }
 
-std::pair<int, int> HeuristicMinMaxStrategy::EvalTotalPoints(
+std::pair<int, int> ParallelHeuristicMinMax::EvalTotalPoints(
         Board board, int player_num, int cur_depth, int alpha, int beta, int score
-        ) {
+) {
     int opp_player_num = 3 - player_num;
     int location, val, result;
     int boardSize = board.GetSize();
+    volatile bool flag = false;
 
     if (board.IsFinish() || cur_depth == total_depth) {
         return std::pair<int, int>{0, score};
     }
 
+
+    // if (cur_depth <= 2) printf("cur_depth, tid: %d, %d \n", cur_depth, omp_get_thread_num());
     /* IF AI's turn */
     if (cur_depth % 2 == 0) {
         result = INT_MIN;
+
+        if (cur_depth == 0) {
+            std::vector<std::pair<int, int>> nxt_moves = HeuristicNextMoves(board, player_num, cur_depth);
+#pragma omp parallel num_threads(8)
+            {
+#pragma omp for
+                for (int i = 0; i < nxt_moves.size(); i ++) {
+                    // int tid = omp_get_thread_num();
+                    // printf("Thread number = %d\n",tid);
+                    std::pair<int, int>& p = nxt_moves[i];
+                    int dscore = p.first, loc = p.second;
+                    int r = loc / boardSize, c = loc % boardSize;
+                    Board b{board};
+                    if (cur_depth % 2 == 0) PlaceWrapper(b, player_num, r, c);
+                    else PlaceWrapper(b, opp_player_num, r, c);
+
+                    val = EvalTotalPoints(b, player_num, cur_depth + 1, alpha, beta, score + dscore).second;
+
+#pragma omp critical
+                    {
+                        if (val > result) {
+                            location = r * boardSize + c;
+                            result = val;
+                        }
+                        alpha = std::max(alpha, val);
+                    }
+
+                }
+            }
+            return std::pair<int, int>{location, result};
+        }
+
         for (const auto& p : HeuristicNextMoves(board, player_num, cur_depth)) {
             int dscore = p.first, loc = p.second;
             int r = loc / boardSize, c = loc % boardSize;
@@ -248,33 +286,66 @@ std::pair<int, int> HeuristicMinMaxStrategy::EvalTotalPoints(
             alpha = std::max(alpha, val);
         }
         return std::pair<int, int>{location, result};
+
     } else {
         result = INT_MAX;
-        for (const auto& p : HeuristicNextMoves(board, player_num, cur_depth)) {
-            int dscore = p.first, loc = p.second;
-            int r = loc / boardSize, c = loc % boardSize;
-            Board b{board};
 
-            if (cur_depth % 2 == 0) PlaceWrapper(b,player_num, r, c);
-            else PlaceWrapper(b, opp_player_num, r, c);
+        if (cur_depth == 1) {
+#pragma omp parallel num_threads(3)
+            {
+#pragma omp for
+                for (const auto& p : HeuristicNextMoves(board, player_num, cur_depth)) {
+                    int dscore = p.first, loc = p.second;
+                    int r = loc / boardSize, c = loc % boardSize;
+                    Board b{board};
 
-            val = EvalTotalPoints(b, player_num, cur_depth + 1, alpha, beta, score + dscore).second;
-            if (val < result) {
-                location = r * boardSize + c;
-                result = val;
+                    if (cur_depth % 2 == 0) PlaceWrapper(b,player_num, r, c);
+                    else PlaceWrapper(b, opp_player_num, r, c);
+
+                    val = EvalTotalPoints(b, player_num, cur_depth + 1, alpha, beta, score + dscore).second;
+
+#pragma omp critical
+                    {
+                        if (val < result) {
+                            location = r * boardSize + c;
+                            result = val;
+                        }
+
+                        beta = std::min(beta, val);
+                        if (result <= alpha) flag = true;
+                    }
+
+                }
             }
+        } else {
+            for (const auto& p : HeuristicNextMoves(board, player_num, cur_depth)) {
+                int dscore = p.first, loc = p.second;
+                int r = loc / boardSize, c = loc % boardSize;
+                Board b{board};
 
-            if (result <= alpha) return std::pair<int, int>{location, result};
-            beta = std::min(beta, val);
+                if (cur_depth % 2 == 0) PlaceWrapper(b,player_num, r, c);
+                else PlaceWrapper(b, opp_player_num, r, c);
+
+                val = EvalTotalPoints(b, player_num, cur_depth + 1, alpha, beta, score + dscore).second;
+                if (val < result) {
+                    location = r * boardSize + c;
+                    result = val;
+                }
+
+                if (result <= alpha) return std::pair<int, int>{location, result};
+                beta = std::min(beta, val);
+            }
         }
+
         return std::pair<int, int>{location, result};
     }
 }
 
-bool HeuristicMinMaxStrategy::GetStrategy(Board* board, int player_num, int *px, int *py) {
+bool ParallelHeuristicMinMax::GetStrategy(Board* board, int player_num, int *px, int *py) {
     int boardSize = board->GetSize();
 
     int score = EvaluateBoard(*board, player_num) - EvaluateBoard(*board, 3 - player_num);
+    // omp_set_num_threads(total_depth * 2);
     std::pair<int, int> nxt_step = EvalTotalPoints(*board, player_num, 0, INT_MIN, INT_MAX, score);
 
     *px = nxt_step.first / boardSize;
@@ -283,12 +354,12 @@ bool HeuristicMinMaxStrategy::GetStrategy(Board* board, int player_num, int *px,
     return true;
 }
 
-int HeuristicMinMaxStrategy::PlaceWrapper(Board &board, int player_num, int r, int c) {
+int ParallelHeuristicMinMax::PlaceWrapper(Board &board, int player_num, int r, int c) {
     board.PlaceChess(player_num, r, c);
     return 0;
 }
 
-int HeuristicMinMaxStrategy::RevertWrapper(Board &board, int r, int c) {
+int ParallelHeuristicMinMax::RevertWrapper(Board &board, int r, int c) {
     board.Revert(r, c);
     return 0;
 }

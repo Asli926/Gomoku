@@ -1,9 +1,8 @@
-#ifndef GOMOKU_HEURISTICMINMAXSTRATEGY_H
-#define GOMOKU_HEURISTICMINMAXSTRATEGY_H
+
+#ifndef GOMOKU_PARALLELHEURISTICMINMAX_H
+#define GOMOKU_PARALLELHEURISTICMINMAX_H
 
 #include <unordered_map>
-// #include <regex>
-//#include <boost/regex.hpp>
 #include "../include/Strategy.h"
 
 
@@ -11,7 +10,7 @@ using needle_list_t = std::vector<std::string>;
 using dfa_t = std::vector<int>;
 using dfa_list_t = std::vector<dfa_t>;
 
-class HeuristicMinMaxStrategy : public Strategy{
+class ParallelHeuristicMinMax : public Strategy{
 private:
     needle_list_t player1_needle_list;
     needle_list_t player2_needle_list;
@@ -38,7 +37,9 @@ private:
 
 public:
     bool GetStrategy(Board *board, int player_num, int *px, int *py);
-    HeuristicMinMaxStrategy(int _total_depth=7);
+    ParallelHeuristicMinMax(int _total_depth=7);
 };
 
-#endif //GOMOKU_HEURISTICMINMAXSTRATEGY_H
+
+
+#endif //GOMOKU_PARALLELHEURISTICMINMAX_H

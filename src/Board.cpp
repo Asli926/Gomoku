@@ -129,8 +129,8 @@ int Board::PrintBoard() {
     return 0;
 }
 
-std::unordered_set<int> Board::AvailableChildren(int dist) {
-    std::unordered_set<int> availChildren;
+std::unordered_set<int, int_hash> Board::AvailableChildren(int dist) {
+    std::unordered_set<int, int_hash> availChildren;
     
     for (int i = 0; i < size_; i ++) {
         for (int j = 0; j < size_; j ++) {
