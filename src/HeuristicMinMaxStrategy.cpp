@@ -3,6 +3,8 @@
 #include <string>
 #include <array>
 #include <functional>
+#include <climits>
+#include <algorithm>
 
 extern "C" int match_count_multiple(char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map);
 
