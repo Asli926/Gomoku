@@ -2,7 +2,7 @@
 #include "cuda.h"
 #include "device_launch_parameters.h"
 
-__global__ void match_count_kernel(int *res, int char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map) {
+__global__ void match_count_kernel(int *res, char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
     int i = 0, j;
@@ -73,7 +73,7 @@ extern "C" int match_count_multiple(char** lines, char** patterns, int** dfas, i
     cudaMalloc((void**)&dev_line_size, sizeof(int) * 4);
 
     // malloc score_map
-    cudaMalloc((void**)&dev_line_size, sizeof(int) * 16);
+    cudaMalloc((void**)&dev_score_map, sizeof(int) * 16);
 
     // malloc result
     cudaMalloc((void**)&dev_res, sizeof(int) * 64);
@@ -105,7 +105,7 @@ extern "C" int match_count_multiple(char** lines, char** patterns, int** dfas, i
     cudaMemcpy(dev_res, res, sizeof(int) * 64, cudaMemcpyHostToDevice);
 
     int out = 0;
-    match_count_kernel<<<4, 16>>>(dev_res, dev_patterns, dev_dfas, dev_pattern_size, dev_line_size, dev_score_map);
+    match_count_kernel<<<4, 16>>>(dev_res, dev_lines, dev_patterns, dev_dfas, dev_pattern_size, dev_line_size, dev_score_map);
     cudaMemcpy(res, dev_res, sizeof(int) * 64, cudaMemcpyDeviceToDevice);
 
     // reduce process
