@@ -1,6 +1,6 @@
 #include "../include/MinMaxStrategy.h"
 #include <string>
-//#include <limits>
+#include <climits>
 //#include <iostream>
 
 
