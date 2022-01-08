@@ -12,8 +12,6 @@ private:
     int last_chess_col_;     /* column of last chess */
     int chess_count;         /* # of placed chess */
 
-    unsigned int hash_value[2]; /* hash value of two players */
-
     int CountByDirection_(int dx, int dy, int player);
 public:
     Board(int size);

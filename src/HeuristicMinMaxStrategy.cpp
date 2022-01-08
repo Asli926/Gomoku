@@ -4,17 +4,23 @@
 #include <array>
 #include <functional>
 
+extern "C" int match_count_multiple(char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map);
+
 HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
+    needle_size_list = new int[16];
+    score_map[0] = 5; score_map[1] = 6; score_map[2] = 6; score_map[3] = 6; score_map[4] = 6;
+    score_map[5] = 6; score_map[6] = 5; score_map[7] = 5; score_map[8] = 5; score_map[9] = 5;
+    score_map[10] = 5; score_map[11] = 6; score_map[12] = 6; score_map[13] = 6; score_map[14] = 6;
+    score_map[15] = 6;
+
     player1_needle_list = needle_list_t{
         "11111", "011110", "011100", "001110", "011010",
         "010110", "11110", "01111", "11011", "10111",
         "11101", "001100", "001010", "010100", "000100", "001000"
     };
 
-    player1_dfa_list = dfa_list_t{};
-    for (const auto& needle : player1_needle_list) {
-        player1_dfa_list.emplace_back(construct_nxt(needle));
-    }
+    player1_dfa_list = new dfa_t[16];
+    for (int k = 0; k < 16; k ++) player1_dfa_list[k] = construct_nxt(player1_needle_list[k]);
 
     player2_needle_list = needle_list_t{
             "22222", "022220", "022200", "002220", "012020",
@@ -22,16 +28,17 @@ HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
             "22202", "002200", "002020", "020200", "000200", "002000"
     };
 
-    player2_dfa_list = dfa_list_t{};
-    for (const auto& needle : player2_needle_list) {
-        player2_dfa_list.emplace_back(construct_nxt(needle));
-    }
+    player2_dfa_list = new dfa_t[16];
+    for (int k = 0; k < 16; k ++) player2_dfa_list[k] = construct_nxt(player2_needle_list[k]);
 
     player_needle_lists = std::vector<needle_list_t>{player1_needle_list, player2_needle_list};
     player_dfa_lists = std::vector<dfa_list_t>{player1_dfa_list, player2_dfa_list};
 
-    score_map = std::vector<int>{50000, 4320, 720, 720, 720, 720, 720, 720, 720,
-                                 720, 720, 120, 120, 120, 20, 20};
+    score_map = new int[16];
+    score_map[0] = 50000; score_map[1] = 4320; score_map[2] = 720; score_map[3] = 720; score_map[4] = 720;
+    score_map[5] = 720; score_map[6] = 720; score_map[7] = 720; score_map[8] = 720; score_map[9] = 720;
+    score_map[10] = 720; score_map[11] = 120; score_map[12] = 120; score_map[13] = 120; score_map[14] = 20;
+    score_map[15] = 20;
 
     total_depth = _total_depth;
 }
@@ -70,17 +77,30 @@ std::array<std::string, 4> HeuristicMinMaxStrategy::GetLinesByChess(Board& board
     return lines;
 }
 
+int HeuristicMinMaxStrategy::EvaluateChessByLinesGPU(const std::array<std::string, 4>& lines, int player_num) {
+    int res = 0;
+    const char* c_lines[4];
+    const char* c_needle_list[16];
+    int c_line_size[4];
+
+    for (int k = 0; k < 4; k ++) {
+        c_lines[k] = lines[k].c_str();
+        c_line_size[k] = lines[k].size();
+    }
+
+    for (int k = 0; k < 16; k ++) c_needle_list[k] = player_needle_lists[player_num - 1][k].c_str();
+
+
+    return match_count_multiple(const_cast<char **>(c_lines), const_cast<char **>(c_needle_list),
+                                player_dfa_lists[player_num - 1], needle_size_list, c_line_size, score_map);
+}
+
 int HeuristicMinMaxStrategy::EvaluateChessByLines(const std::array<std::string, 4>& lines, int player_num) {
     int res = 0;
     for (const auto& li: lines) {
         for (int nx = 0; nx < player_needle_lists[player_num - 1].size(); nx ++) {
             res += match_count(li, player_needle_lists[player_num - 1][nx],
                                player_dfa_lists[player_num - 1][nx]) * score_map[nx];
-
-//            const auto& n = player_needle_lists[player_num - 1][nx];
-//            auto words_begin = boost::sregex_iterator(li.begin(), li.end(), n);
-//            auto words_end = boost::sregex_iterator();
-//            res += (int)std::distance(words_begin, words_end) * score_map[nx];
         }
     }
 
@@ -187,8 +207,8 @@ std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Boa
         int mc = move % board_size;
 
         lines = GetLinesByChess(tmp_board, mr, mc);
-        old_chess_score = EvaluateChessByLines(lines, player_num) -
-                            EvaluateChessByLines(lines, opp_player_num);
+        old_chess_score = EvaluateChessByLinesGPU(lines, player_num) -
+                EvaluateChessByLinesGPU(lines, opp_player_num);
 
         if (max_layer)
             tmp_board.PlaceChess(player_num, mr, mc);
@@ -196,8 +216,8 @@ std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Boa
             tmp_board.PlaceChess(opp_player_num, mr, mc);
 
         lines = GetLinesByChess(tmp_board, mr, mc);
-        new_chess_score = EvaluateChessByLines(lines, player_num) -
-                          EvaluateChessByLines(lines, opp_player_num);
+        new_chess_score = EvaluateChessByLinesGPU(lines, player_num) -
+                EvaluateChessByLinesGPU(lines, opp_player_num);
 
         RevertWrapper(tmp_board, mr, mc);
         delta_chess_score = new_chess_score - old_chess_score;
@@ -209,7 +229,7 @@ std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Boa
     else
         std::sort(possible_moves.begin(), possible_moves.end(), std::less<>());
 
-    for (int i = 0; i < std::min(10, (int)possible_moves.size()); i ++) {
+    for (int i = 0; i < std::min(board_size, (int)possible_moves.size()); i ++) {
         res.emplace_back(possible_moves[i]);
     }
     return res;

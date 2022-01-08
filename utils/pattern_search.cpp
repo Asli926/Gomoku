@@ -1,10 +1,12 @@
 #include "../include/pattern_search.h"
 
-std::vector<int> construct_nxt(const std::string& pattern) {
+int* construct_nxt(const std::string& pattern) {
     int m = pattern.size();
     int i = 1, j = 0;
-    std::vector<int> nxt(m + 1, 0);
+    int* nxt = new int[m + 1];
     nxt[0] = -1;
+
+    for (int k = 1; k < m + 1; k ++) nxt[k] = 0;
 
     while (i < m) {
         if (j == -1 || pattern[i] == pattern[j]) {
@@ -18,7 +20,7 @@ std::vector<int> construct_nxt(const std::string& pattern) {
     return nxt;
 }
 
-int match_count(const std::string& line, const std::string& pattern, const std::vector<int>& nxt) {
+int match_count(const std::string& line, const std::string& pattern, const int* nxt) {
     int i = 0, j;
     int m = pattern.size(), n = line.size();
     int res = 0;

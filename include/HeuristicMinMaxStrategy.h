@@ -8,23 +8,25 @@
 
 
 using needle_list_t = std::vector<std::string>;
-using dfa_t = std::vector<int>;
-using dfa_list_t = std::vector<dfa_t>;
+using dfa_t = int*;
+using dfa_list_t = dfa_t*;
 
 class HeuristicMinMaxStrategy : public Strategy{
 private:
+    int* needle_size_list;
     needle_list_t player1_needle_list;
     needle_list_t player2_needle_list;
     dfa_list_t player1_dfa_list;
     dfa_list_t player2_dfa_list;
     std::vector<needle_list_t> player_needle_lists;
     std::vector<dfa_list_t> player_dfa_lists;
-    std::vector<int> score_map;
+    int* score_map;
     int total_depth;
 
     // int UpdateScore(Board& board, int player_num, int score, int r, int c);
     std::array<std::string, 4> GetLinesByChess(Board& board, int r, int c);
     std::pair<int, int> EvalTotalPoints(Board board, int player_num, int cur_depth, int alpha, int beta, int score);
+    int EvaluateChessByLinesGPU(const std::array<std::string, 4>&, int);
     int EvaluateChessByLines(const std::array<std::string, 4>&, int);
     int EvaluateBoard(Board& board, int player_num);
     std::vector<std::pair<int, int>> HeuristicNextMoves(Board& board, int player_num, bool max_layer);
