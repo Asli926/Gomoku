@@ -8,10 +8,9 @@
 #include <cstdlib>
 
 int test_game() {
+    printf("LOADING...\n");
     int board_size = 15;
-    RandomStrategy strategy{};
     HumanStrategy hmStrategy{};
-    MinMaxStrategy mmStrategy{};
     HeuristicMinMaxStrategy hmmStrategy{};
 
     Board board{board_size};
@@ -21,9 +20,8 @@ int test_game() {
 
     Player player1{1, &board, &hmStrategy};
     Player player2{2, &board, &hmmStrategy};
-//    board.PlaceChess(1, 5, 5);
-//    board.PlaceChess(2, 7, 7);
 
+    printf("START!\n");
     while (true) {
         if (player1.NextChess() != 0) printf("player1 x or y wrong!\n");
         board.PrintBoard();

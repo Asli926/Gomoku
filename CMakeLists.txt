@@ -13,4 +13,4 @@ add_executable(Gomoku
         src/Board.cpp
         test/test_board.cpp test/test_search.cpp src/Player.cpp test/test_game.cpp test/test_main.cpp src/RandomStrategy.cpp src/HumanStrategy.cpp src/MinMaxStrategy.cpp test/test_score.cpp src/HeuristicMinMaxStrategy.cpp utils/pattern_search.cpp)
 
-target_link_libraries(project ${EXTRA_LIBS})
+target_link_libraries(Gomoku ${EXTRA_LIBS})
