@@ -18,7 +18,7 @@ int test_game() {
 
     int finished;
 
-    Player player1{1, &board, &hmStrategy};
+    Player player1{1, &board, &hmmStrategy};
     Player player2{2, &board, &hmmStrategy};
 
     printf("START!\n");

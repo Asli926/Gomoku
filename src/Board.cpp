@@ -146,6 +146,8 @@ std::unordered_set<int> Board::AvailableChildren(int dist) {
 
         }
     }
+
+    if (availChildren.empty()) availChildren.insert((size_ / 2) * size_ + (size_ / 2));
     return availChildren;
 }
 
