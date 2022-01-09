@@ -6,9 +6,10 @@
 #include "../include/HeuristicMinMaxStrategy.h"
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 
 int test_game() {
-    printf("LOADING...\n");
+    std::cout << "LOADING..." << std::endl;
     int board_size = 15;
     HumanStrategy hmStrategy{};
     HeuristicMinMaxStrategy hmmStrategy{};
@@ -21,7 +22,7 @@ int test_game() {
     Player player1{1, &board, &hmmStrategy};
     Player player2{2, &board, &hmmStrategy};
 
-    printf("START!\n");
+    std::cout << "START!" << std::endl;
     while (true) {
         if (player1.NextChess() != 0) printf("player1 x or y wrong!\n");
         board.PrintBoard();

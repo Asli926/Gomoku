@@ -5,12 +5,14 @@
 #include <functional>
 #include <climits>
 #include <algorithm>
+#include <iostream>
 #include "../cuda/gpu_match.cuh"
 
 // extern "C"
 // int match_count_multiple(char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map);
 
 HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
+    std::cout << "HeuristicMinMaxStrategy: Construction" << std::endl;
     needle_size_list = new int[16];
     score_map[0] = 5; score_map[1] = 6; score_map[2] = 6; score_map[3] = 6; score_map[4] = 6;
     score_map[5] = 6; score_map[6] = 5; score_map[7] = 5; score_map[8] = 5; score_map[9] = 5;
@@ -82,21 +84,24 @@ std::array<std::string, 4> HeuristicMinMaxStrategy::GetLinesByChess(Board& board
 }
 
 int HeuristicMinMaxStrategy::EvaluateChessByLinesGPU(const std::array<std::string, 4>& lines, int player_num) {
+    std::cout << "EvaluateChessByLinesGPU: cuda function wrapper" << std::endl;
     int res = 0;
-    const char* c_lines[4];
-    const char* c_needle_list[16];
+    char c_lines[4 * 20];
+    char c_needle_list[16 * 6];
     int c_line_size[4];
 
     for (int k = 0; k < 4; k ++) {
-        c_lines[k] = lines[k].c_str();
+        memcpy((void*) &c_lines[20 * k], lines[k].c_str(), lines[k].size());
         c_line_size[k] = lines[k].size();
     }
 
-    for (int k = 0; k < 16; k ++) c_needle_list[k] = player_needle_lists[player_num - 1][k].c_str();
+    for (int k = 0; k < 16; k ++) {
+        memcpy((void*) &c_needle_list[6 * k], player_needle_lists[player_num - 1][k].c_str(),
+               player_needle_lists[player_num - 1][k].size())
+    }
 
-
-    return match_count_multiple(const_cast<char **>(c_lines), const_cast<char **>(c_needle_list),
-                                player_dfa_lists[player_num - 1], needle_size_list, c_line_size, score_map);
+    return match_count_multiple(c_lines, c_needle_list,reinterpret_cast<int *>(player_dfa_lists[player_num - 1]),
+                                needle_size_list, c_line_size, score_map);
 }
 
 int HeuristicMinMaxStrategy::EvaluateChessByLines(const std::array<std::string, 4>& lines, int player_num) {
@@ -194,6 +199,7 @@ int HeuristicMinMaxStrategy::EvaluateBoard(Board &board, int player_num) {
 }
 
 std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Board& board, int player_num, bool max_layer) {
+    std::cout << "HeuristicNextMoves: entering" << std::endl;
     Board tmp_board{board};
     int board_size = board.GetSize();
     int opp_player_num = 3 - player_num;
@@ -238,6 +244,7 @@ std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Boa
 std::pair<int, int> HeuristicMinMaxStrategy::EvalTotalPoints(
         Board board, int player_num, int cur_depth, int alpha, int beta, int score
         ) {
+    std::cout << "EvalTotalPoints: entering" << std::endl;
     int opp_player_num = 3 - player_num;
     int location, val, result;
     int boardSize = board.GetSize();
@@ -290,6 +297,7 @@ std::pair<int, int> HeuristicMinMaxStrategy::EvalTotalPoints(
 }
 
 bool HeuristicMinMaxStrategy::GetStrategy(Board* board, int player_num, int *px, int *py) {
+    std::cout << "GetStrategy: entering" << std::endl;
     int boardSize = board->GetSize();
 
     int score = EvaluateBoard(*board, player_num) - EvaluateBoard(*board, 3 - player_num);

@@ -4,14 +4,14 @@
 #include "gpu_match.cuh"
 
 __global__
-void match_count_kernel(int *res, char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map) {
+void match_count_kernel(int *res, char* lines, char* patterns, int* dfas, int* pattern_size, int* line_size, int* score_map) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
     int i = 0, j;
     int m = pattern_size[threadIdx.x], n = line_size[blockIdx.x];
-    char *line = lines[blockIdx.x];
-    char *pattern = patterns[threadIdx.x];
-    int *nxt = dfas[threadIdx.x];
+    char *line = lines + (20 * blockIdx.x);
+    char *pattern = patterns + 6 * threadIdx.x;
+    int *nxt = dfas + 7 * threadIdx.x;
 
     // i is the pointer of 'line'
     // j is the pointer of 'pattern'
@@ -43,31 +43,22 @@ void match_count_kernel(int *res, char** lines, char** patterns, int** dfas, int
 
 
 extern "C"
-int match_count_multiple(char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map) {
+int match_count_multiple(char* lines, char* patterns, int* dfas, int* pattern_size, int* line_size, int* score_map) {
 
-    char **dev_lines, **dev_patterns;
-    int** dev_dfas;
+    char *dev_lines, *dev_patterns;
+    int *dev_dfas;
     int *dev_pattern_size, *dev_line_size, *dev_score_map, *dev_res;
 
     /* =============== Malloc memory on GPU =============== */
 
-    // malloc lines
-    cudaMalloc((void**)&dev_lines, sizeof(char*) * 4);
-    for (int k = 0; k < 4; k ++) {
-        cudaMalloc((void **) &(dev_lines[k]), sizeof(char) * line_size[k]);
-    }
+    // malloc lines (4 lines of 20 characters)
+    cudaMalloc((void**)&dev_lines, sizeof(char) * 4 * 20);
 
-    // malloc patterns
-    cudaMalloc((void**)&dev_patterns, sizeof(char*) * 16);
-    for (int k = 0; k < 16; k ++) {
-        cudaMalloc((void **) &(dev_patterns[k]), sizeof(char) * pattern_size[k]);
-    }
+    // malloc patterns (16 patterns of 6 characters)
+    cudaMalloc((void**)&dev_patterns, sizeof(char) * 16 * 6);
 
-    // malloc dfas
-    cudaMalloc((void**)&dev_dfas, sizeof(int*) * 16);
-    for (int k = 0; k < 16; k ++) {
-        cudaMalloc((void **) &(dev_dfas[k]), sizeof(int) * pattern_size[k]);
-    }
+    // malloc dfas (16 dfa arrays of 7 integers)
+    cudaMalloc((void**)&dev_dfas, sizeof(int*) * 16 * 7);
 
     // malloc pattern_size
     cudaMalloc((void**)&dev_pattern_size, sizeof(int) * 16);
@@ -84,20 +75,9 @@ int match_count_multiple(char** lines, char** patterns, int** dfas, int* pattern
 
     /* =============== Copy memory from RAM to GPU device =============== */
 
-    cudaMemcpy(dev_lines, lines, sizeof(char*) * 4, cudaMemcpyHostToDevice);
-    for (int k = 0; k < 4; k ++) {
-        cudaMemcpy(dev_lines[k], lines[k], sizeof(char) * line_size[k], cudaMemcpyHostToDevice);
-    }
-
-    cudaMemcpy(dev_patterns, patterns, sizeof(char*) * 4, cudaMemcpyHostToDevice);
-    for (int k = 0; k < 4; k ++) {
-        cudaMemcpy(dev_lines[k], lines[k], sizeof(char) * pattern_size[k], cudaMemcpyHostToDevice);
-    }
-
-    cudaMemcpy(dev_dfas, dfas, sizeof(int*) * 16, cudaMemcpyHostToDevice);
-    for (int k = 0; k < 16; k ++) {
-        cudaMemcpy(dev_dfas[k], dfas[k], sizeof(int) * (pattern_size[k] + 1), cudaMemcpyHostToDevice);
-    }
+    cudaMemcpy(dev_lines, lines, sizeof(char) * 4 * 20, cudaMemcpyHostToDevice);
+    cudaMemcpy(dev_patterns, patterns, sizeof(char) * 4 * 6, cudaMemcpyHostToDevice);
+    cudaMemcpy(dev_dfas, dfas, sizeof(int) * 16 * 7, cudaMemcpyHostToDevice);
 
     cudaMemcpy(dev_pattern_size, pattern_size, sizeof(int) * 16, cudaMemcpyHostToDevice);
     cudaMemcpy(dev_line_size, line_size, sizeof(int) * 4, cudaMemcpyHostToDevice);
@@ -116,15 +96,9 @@ int match_count_multiple(char** lines, char** patterns, int** dfas, int* pattern
 
     /* =============== Copy memory from RAM to GPU device =============== */
 
-    for (int k = 0; k < 4; k ++) {
-        cudaFree(dev_lines[k]);
-    }
-
-    for (int k = 0; k < 16; k ++) {
-        cudaFree(dev_patterns[k]);
-        cudaFree(dev_dfas[k]);
-    }
-
+    cudaFree(dev_lines);
+    cudaFree(dev_patterns);
+    cudaFree(dev_dfas);
     cudaFree(dev_res);
     cudaFree(dev_line_size);
     cudaFree(dev_pattern_size);
