@@ -14,10 +14,10 @@
 HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
     std::cout << "HeuristicMinMaxStrategy: Construction" << std::endl;
     needle_size_list = new int[16];
-    score_map[0] = 5; score_map[1] = 6; score_map[2] = 6; score_map[3] = 6; score_map[4] = 6;
-    score_map[5] = 6; score_map[6] = 5; score_map[7] = 5; score_map[8] = 5; score_map[9] = 5;
-    score_map[10] = 5; score_map[11] = 6; score_map[12] = 6; score_map[13] = 6; score_map[14] = 6;
-    score_map[15] = 6;
+    needle_size_list[0] = 5; needle_size_list[1] = 6; needle_size_list[2] = 6; needle_size_list[3] = 6; needle_size_list[4] = 6;
+    needle_size_list[5] = 6; needle_size_list[6] = 5; needle_size_list[7] = 5; needle_size_list[8] = 5; needle_size_list[9] = 5;
+    needle_size_list[10] = 5; needle_size_list[11] = 6; needle_size_list[12] = 6; needle_size_list[13] = 6; needle_size_list[14] = 6;
+    needle_size_list[15] = 6;
 
     player1_needle_list = needle_list_t{
         "11111", "011110", "011100", "001110", "011010",
