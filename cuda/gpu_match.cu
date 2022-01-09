@@ -1,8 +1,10 @@
 #include "cuda_runtime.h"
 #include "cuda.h"
 #include "device_launch_parameters.h"
+#include "gpu_match.cuh"
 
-__global__ void match_count_kernel(int *res, char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map) {
+__global__
+void match_count_kernel(int *res, char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
     int i = 0, j;
@@ -40,7 +42,8 @@ __global__ void match_count_kernel(int *res, char** lines, char** patterns, int*
 }
 
 
-extern "C" int match_count_multiple(char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map) {
+extern "C"
+int match_count_multiple(char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map) {
 
     char **dev_lines, **dev_patterns;
     int** dev_dfas;

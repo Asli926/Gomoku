@@ -5,8 +5,10 @@
 #include <functional>
 #include <climits>
 #include <algorithm>
+#include "../cuda/gpu_match.cuh"
 
-extern "C" int match_count_multiple(char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map);
+// extern "C"
+// int match_count_multiple(char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map);
 
 HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
     needle_size_list = new int[16];
@@ -111,10 +113,6 @@ int HeuristicMinMaxStrategy::EvaluateChessByLines(const std::array<std::string, 
 
 int HeuristicMinMaxStrategy::CountPoints(int player_num, const std::string& s, int& level_points) {
     for (int i = 0; i < player1_needle_list.size(); i ++) {
-//        const auto& n = player_needle_list[i];
-//        auto words_begin = boost::sregex_iterator(s.begin(), s.end(), n);
-//        auto words_end = boost::sregex_iterator();
-//        level_points += (int)std::distance(words_begin, words_end) * score_map[i];
         level_points += match_count(s, player_needle_lists[player_num - 1][i],
                                     player_dfa_lists[player_num - 1][i]) * score_map[i];
     }
