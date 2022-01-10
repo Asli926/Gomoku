@@ -58,7 +58,7 @@ int match_count_multiple(char* lines, char* patterns, int* dfas, int* pattern_si
     cudaMalloc((void**)&dev_patterns, sizeof(char) * 16 * 6);
 
     // malloc dfas (16 dfa arrays of 7 integers)
-    cudaMalloc((void**)&dev_dfas, sizeof(int*) * 16 * 7);
+    cudaMalloc((void**)&dev_dfas, sizeof(int) * 16 * 7);
 
     // malloc pattern_size
     cudaMalloc((void**)&dev_pattern_size, sizeof(int) * 16);

@@ -1,12 +1,11 @@
 #include "../include/HeuristicMinMaxStrategy.h"
 #include "../include/pattern_search.h"
-#include <string>
+#include <cstring>
 #include <array>
 #include <functional>
 #include <climits>
 #include <algorithm>
 #include <iostream>
-#include <cstring>
 #include "../cuda/gpu_match.cuh"
 
 // extern "C"
