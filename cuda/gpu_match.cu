@@ -63,7 +63,6 @@ void match_count_kernel(int *res, char* lines, char* patterns, int* dfas, int* p
         }
         *res = sum;
         printf("[On GPU] kernel result: %d\n", sum);
-        fflush(stdout);
     }
 
 }
