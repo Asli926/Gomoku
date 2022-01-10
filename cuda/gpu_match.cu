@@ -92,7 +92,7 @@ int match_count_multiple(char* lines, char* patterns, int* dfas, int* pattern_si
     checkCudaError(cudaMemcpy(dev_line_size, line_size, sizeof(int) * 4, cudaMemcpyHostToDevice), "copy line size");
     checkCudaError(cudaMemcpy(dev_score_map, score_map, sizeof(int) * 16, cudaMemcpyHostToDevice), "copy score map");
 
-    int *res = malloc(sizeof(int) * 64);
+    int *res = (int*) malloc(sizeof(int) * 64);
     for (int k = 0; k < 64; k ++) res[k] = 0;
     checkCudaError(cudaMemcpy(dev_res, res, sizeof(int) * 64, cudaMemcpyHostToDevice), "copy result to GPU");
 
