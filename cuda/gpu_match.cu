@@ -62,6 +62,8 @@ void match_count_kernel(int *res, char* lines, char* patterns, int* dfas, int* p
             sum += temp[t];
         }
         *res = sum;
+        printf("[On GPU] kernel result: %d\n", sum);
+        fflush(stdout);
     }
 
 }
@@ -111,6 +113,7 @@ int match_count_multiple(char* lines, char* patterns, int* dfas, int* pattern_si
     int *res = (int*) malloc(sizeof(int));
 
     match_count_kernel<<<1, 64>>>(dev_res, dev_lines, dev_patterns, dev_dfas, dev_pattern_size, dev_line_size, dev_score_map);
+    cudaDeviceSynchronize();
     checkCudaError(cudaMemcpy(res, dev_res, sizeof(int), cudaMemcpyDeviceToHost), "copy result from GPU");
     int out = *res;
     if (out != 0) {
