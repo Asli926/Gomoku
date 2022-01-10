@@ -6,6 +6,7 @@
 #include <climits>
 #include <algorithm>
 #include <iostream>
+#include <cstring>
 #include "../cuda/gpu_match.cuh"
 
 // extern "C"
@@ -85,10 +86,10 @@ std::array<std::string, 4> HeuristicMinMaxStrategy::GetLinesByChess(Board& board
 
 int HeuristicMinMaxStrategy::EvaluateChessByLinesGPU(const std::array<std::string, 4>& lines, int player_num) {
     std::cout << "EvaluateChessByLinesGPU: cuda function wrapper" << std::endl;
-    int res = 0;
     char c_lines[4 * 20];
     char c_needle_list[16 * 6];
     int c_line_size[4];
+    int c_dfas[16 * 7];
 
     for (int k = 0; k < 4; k ++) {
         memcpy((void*) &c_lines[20 * k], lines[k].c_str(), lines[k].size());
@@ -97,11 +98,11 @@ int HeuristicMinMaxStrategy::EvaluateChessByLinesGPU(const std::array<std::strin
 
     for (int k = 0; k < 16; k ++) {
         memcpy((void*) &c_needle_list[6 * k], player_needle_lists[player_num - 1][k].c_str(),
-               player_needle_lists[player_num - 1][k].size())
+               player_needle_lists[player_num - 1][k].size());
+        memcpy((void*) &c_dfas[7 * k],  player_dfa_lists[player_num - 1][k], needle_size_list[k] + 1);
     }
 
-    return match_count_multiple(c_lines, c_needle_list,reinterpret_cast<int *>(player_dfa_lists[player_num - 1]),
-                                needle_size_list, c_line_size, score_map);
+    return match_count_multiple(c_lines, c_needle_list, c_dfas, needle_size_list, c_line_size, score_map);
 }
 
 int HeuristicMinMaxStrategy::EvaluateChessByLines(const std::array<std::string, 4>& lines, int player_num) {

@@ -89,7 +89,7 @@ int match_count_multiple(char* lines, char* patterns, int* dfas, int* pattern_si
 
     int out = 0;
     match_count_kernel<<<4, 16>>>(dev_res, dev_lines, dev_patterns, dev_dfas, dev_pattern_size, dev_line_size, dev_score_map);
-    cudaMemcpy(res, dev_res, sizeof(int) * 64, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(res, dev_res, sizeof(int) * 64, cudaMemcpyDeviceToHost);
 
     // reduce process
     for (int k = 0; k < 64; k ++) out += res[k];
