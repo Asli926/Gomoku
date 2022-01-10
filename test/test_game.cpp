@@ -19,7 +19,7 @@ int test_game() {
 
     int finished;
 
-    Player player1{1, &board, &hmmStrategy};
+    Player player1{1, &board, &hmStrategy};
     Player player2{2, &board, &hmmStrategy};
 
     std::cout << "START!" << std::endl;

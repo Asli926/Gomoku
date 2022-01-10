@@ -8,9 +8,6 @@
 #include <iostream>
 #include "../cuda/gpu_match.cuh"
 
-// extern "C"
-// int match_count_multiple(char** lines, char** patterns, int** dfas, int* pattern_size, int* line_size, int* score_map);
-
 HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
     std::cout << "HeuristicMinMaxStrategy: Construction" << std::endl;
     needle_size_list = new int[16];
