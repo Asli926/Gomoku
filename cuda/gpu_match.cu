@@ -3,6 +3,7 @@
 #include "device_launch_parameters.h"
 #include "gpu_match.cuh"
 #include <stdio.h>
+#include <cstdlib>
 
 inline void checkCudaError(cudaError err, const char* loc) {
     if (err != cudaSuccess) {
@@ -91,7 +92,7 @@ int match_count_multiple(char* lines, char* patterns, int* dfas, int* pattern_si
     checkCudaError(cudaMemcpy(dev_line_size, line_size, sizeof(int) * 4, cudaMemcpyHostToDevice), "copy line size");
     checkCudaError(cudaMemcpy(dev_score_map, score_map, sizeof(int) * 16, cudaMemcpyHostToDevice), "copy score map");
 
-    int res[64];
+    int *res = malloc(sizeof(int) * 64);
     for (int k = 0; k < 64; k ++) res[k] = 0;
     checkCudaError(cudaMemcpy(dev_res, res, sizeof(int) * 64, cudaMemcpyHostToDevice), "copy result to GPU");
 
@@ -106,7 +107,7 @@ int match_count_multiple(char* lines, char* patterns, int* dfas, int* pattern_si
         fflush(stdout);
     }
 
-    /* =============== Copy memory from RAM to GPU device =============== */
+    /* =============== Free memory =============== */
 
     checkCudaError(cudaFree(dev_lines), "free lines");
     checkCudaError(cudaFree(dev_patterns), "free patterns");
@@ -116,5 +117,7 @@ int match_count_multiple(char* lines, char* patterns, int* dfas, int* pattern_si
     checkCudaError(cudaFree(dev_pattern_size), "free pattern size");
     checkCudaError(cudaFree(dev_score_map), "free score map");
 
-    return out;
+    free(res);
+
+    return 0;
 }
