@@ -44,6 +44,20 @@ HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
     score_map[15] = 20;
 
     total_depth = _total_depth;
+
+    // Test GPU function
+    std::array<std::string, 4> cpu_lines;
+    cpu_lines[0] = "000000100000000";
+    cpu_lines[1] = "000000110000000";
+    cpu_lines[2] = "000000111000000";
+    cpu_lines[3] = "000000110000000";
+
+    int gpu_res = EvaluateChessByLinesGPU(cpu_lines, 1);
+    if (gpu_res <= 0) {
+        std::cout << "GPU TEST NOT PASSED!" << std::endl;
+        exit(-1);
+    }
+
 }
 
 /* only translate 0 - 9 to its char type */
