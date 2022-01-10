@@ -81,7 +81,7 @@ std::array<std::string, 4> HeuristicMinMaxStrategy::GetLinesByChess(Board& board
 }
 
 int HeuristicMinMaxStrategy::EvaluateChessByLinesGPU(const std::array<std::string, 4>& lines, int player_num) {
-    std::cout << "EvaluateChessByLinesGPU: cuda function wrapper" << std::endl;
+    // std::cout << "EvaluateChessByLinesGPU: cuda function wrapper" << std::endl;
     char c_lines[4 * 20];
     char c_needle_list[16 * 6];
     int c_line_size[4];
@@ -196,7 +196,7 @@ int HeuristicMinMaxStrategy::EvaluateBoard(Board &board, int player_num) {
 }
 
 std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Board& board, int player_num, bool max_layer) {
-    std::cout << "HeuristicNextMoves: entering" << std::endl;
+    // std::cout << "HeuristicNextMoves: entering" << std::endl;
     Board tmp_board{board};
     int board_size = board.GetSize();
     int opp_player_num = 3 - player_num;
@@ -241,7 +241,7 @@ std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Boa
 std::pair<int, int> HeuristicMinMaxStrategy::EvalTotalPoints(
         Board board, int player_num, int cur_depth, int alpha, int beta, int score
         ) {
-    std::cout << "EvalTotalPoints: entering" << std::endl;
+    // std::cout << "EvalTotalPoints: entering" << std::endl;
     int opp_player_num = 3 - player_num;
     int location, val, result;
     int boardSize = board.GetSize();
