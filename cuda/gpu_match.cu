@@ -14,13 +14,16 @@ inline void checkCudaError(cudaError err, const char* loc) {
 
 __global__
 void match_count_kernel(int *res, char* lines, char* patterns, int* dfas, int* pattern_size, int* line_size, int* score_map) {
-    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    extern __shared__ int temp[];
+    int tid = threadIdx.x;
+    temp[tid] = 0;
 
     int i = 0, j;
-    int m = pattern_size[threadIdx.x], n = line_size[blockIdx.x];
-    char *line = lines + (20 * blockIdx.x);
-    char *pattern = patterns + 6 * threadIdx.x;
-    int *nxt = dfas + 7 * threadIdx.x;
+    int threadId = tid % 16, blockId = tid / 16;
+    int m = pattern_size[threadId], n = line_size[blockId];
+    char *line = lines + (20 * blockId);
+    char *pattern = patterns + 6 * threadId;
+    int *nxt = dfas + 7 * threadId;
 
     // i is the pointer of 'line'
     // j is the pointer of 'pattern'
@@ -40,7 +43,7 @@ void match_count_kernel(int *res, char* lines, char* patterns, int* dfas, int* p
         // right after a single search
         // If j == m: we have found one match, so res ++
         if (j == m) {
-            res[tid] += score_map[threadIdx.x];
+            temp[tid] += score_map[threadId];
             i = i - j + 1;
             continue;
         }
@@ -48,6 +51,19 @@ void match_count_kernel(int *res, char* lines, char* patterns, int* dfas, int* p
         // Otherwise: we have traversed to the end of 'line', so just break
         break;
     }
+
+    __syncthreads(); // synchronize all threads
+
+    if (tid == 0)
+    {
+        int sum = 0;
+        for (int t = 0; t < 64; t++)
+        {
+            sum += temp[t];
+        }
+        *res = sum;
+    }
+
 }
 
 
@@ -79,7 +95,7 @@ int match_count_multiple(char* lines, char* patterns, int* dfas, int* pattern_si
     checkCudaError(cudaMalloc((void**)&dev_score_map, sizeof(int) * 16), "Malloc score map");
 
     // malloc result
-    checkCudaError(cudaMalloc((void**)&dev_res, sizeof(int) * 64), "Malloc result");
+    checkCudaError(cudaMalloc((void**)&dev_res, sizeof(int)), "Malloc result");
 
 
     /* =============== Copy memory from RAM to GPU device =============== */
@@ -92,16 +108,11 @@ int match_count_multiple(char* lines, char* patterns, int* dfas, int* pattern_si
     checkCudaError(cudaMemcpy(dev_line_size, line_size, sizeof(int) * 4, cudaMemcpyHostToDevice), "copy line size");
     checkCudaError(cudaMemcpy(dev_score_map, score_map, sizeof(int) * 16, cudaMemcpyHostToDevice), "copy score map");
 
-    int *res = (int*) malloc(sizeof(int) * 64);
-    for (int k = 0; k < 64; k ++) res[k] = 0;
-    checkCudaError(cudaMemcpy(dev_res, res, sizeof(int) * 64, cudaMemcpyHostToDevice), "copy result to GPU");
+    int *res = (int*) malloc(sizeof(int));
 
-    int out = 0;
-    match_count_kernel<<<4, 16>>>(dev_res, dev_lines, dev_patterns, dev_dfas, dev_pattern_size, dev_line_size, dev_score_map);
-    checkCudaError(cudaMemcpy(res, dev_res, sizeof(int) * 64, cudaMemcpyDeviceToHost), "copy result from GPU");
-
-    // reduce process
-    for (int k = 0; k < 64; k ++) out += res[k];
+    match_count_kernel<<<1, 64>>>(dev_res, dev_lines, dev_patterns, dev_dfas, dev_pattern_size, dev_line_size, dev_score_map);
+    checkCudaError(cudaMemcpy(res, dev_res, sizeof(int), cudaMemcpyDeviceToHost), "copy result from GPU");
+    int out = *res;
     if (out != 0) {
         printf("out: %d\n", out);
         fflush(stdout);
@@ -119,5 +130,5 @@ int match_count_multiple(char* lines, char* patterns, int* dfas, int* pattern_si
 
     free(res);
 
-    return 0;
+    return out;
 }
