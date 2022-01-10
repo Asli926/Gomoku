@@ -31,7 +31,7 @@ void match_count_kernel(int *res, char* lines, char* patterns, int* dfas, int* p
         // right after a single search
         // If j == m: we have found one match, so res ++
         if (j == m) {
-            res[tid] ++;
+            res[tid] += score_map[threadIdx.x];
             i = i - j + 1;
             continue;
         }
