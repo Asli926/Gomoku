@@ -14,7 +14,7 @@ inline void checkCudaError(cudaError err, const char* loc) {
 
 __global__
 void match_count_kernel(int *res, char* lines, char* patterns, int* dfas, int* pattern_size, int* line_size, int* score_map) {
-    extern __shared__ int temp[];
+    __shared__ int temp[64];
     int tid = threadIdx.x;
     temp[tid] = 0;
 
@@ -62,7 +62,6 @@ void match_count_kernel(int *res, char* lines, char* patterns, int* dfas, int* p
             sum += temp[t];
         }
         *res = sum;
-        printf("[On GPU] kernel result: %d\n", sum);
     }
 
 }

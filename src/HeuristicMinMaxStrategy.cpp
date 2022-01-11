@@ -109,7 +109,12 @@ int HeuristicMinMaxStrategy::EvaluateChessByLinesGPU(const std::array<std::strin
     for (int k = 0; k < 16; k ++) {
         memcpy((void*) &c_needle_list[6 * k], player_needle_lists[player_num - 1][k].c_str(),
                player_needle_lists[player_num - 1][k].size());
-        memcpy((void*) &c_dfas[7 * k],  player_dfa_lists[player_num - 1][k], needle_size_list[k] + 1);
+    }
+
+    for (int u = 0; u < 16; u ++) {
+        for (int w = 0; w < 7; w ++) {
+            c_dfas[u * 7 + w] = player_dfa_lists[player_num - 1][u][w];
+        }
     }
 
     return match_count_multiple(c_lines, c_needle_list, c_dfas, needle_size_list, c_line_size, score_map);
