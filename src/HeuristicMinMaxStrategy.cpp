@@ -252,7 +252,7 @@ std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Boa
         new_chess_score = EvaluateChessByLinesGPU(lines, line_sizes, player_num) -
                 EvaluateChessByLinesGPU(lines, line_sizes, opp_player_num);
 
-        RevertWrapper(tmp_board, mr, mc);
+        tmp_board.Revert(mr, mc);
         delta_chess_score = new_chess_score - old_chess_score;
         possible_moves.emplace_back(std::make_pair(delta_chess_score, move));
     }
@@ -290,8 +290,8 @@ std::pair<int, int> HeuristicMinMaxStrategy::EvalTotalPoints(
             int dscore = p.first, loc = p.second;
             int r = loc / boardSize, c = loc % boardSize;
             Board b{board};
-            if (cur_depth % 2 == 0) PlaceWrapper(b, player_num, r, c);
-            else PlaceWrapper(b, opp_player_num, r, c);
+            if (cur_depth % 2 == 0) b.PlaceChess(player_num, r, c);
+            else b.PlaceChess(opp_player_num, r, c);
 
             val = EvalTotalPoints(b, player_num, cur_depth + 1, alpha, beta, score + dscore).second;
             if (val > result) {
@@ -310,8 +310,8 @@ std::pair<int, int> HeuristicMinMaxStrategy::EvalTotalPoints(
             int r = loc / boardSize, c = loc % boardSize;
             Board b{board};
 
-            if (cur_depth % 2 == 0) PlaceWrapper(b,player_num, r, c);
-            else PlaceWrapper(b, opp_player_num, r, c);
+            if (cur_depth % 2 == 0) b.PlaceChess(player_num, r, c);
+            else b.PlaceChess(opp_player_num, r, c);
 
             val = EvalTotalPoints(b, player_num, cur_depth + 1, alpha, beta, score + dscore).second;
             if (val < result) {
@@ -337,14 +337,4 @@ bool HeuristicMinMaxStrategy::GetStrategy(Board* board, int player_num, int *px,
     *py = nxt_step.first % boardSize;
 
     return true;
-}
-
-int HeuristicMinMaxStrategy::PlaceWrapper(Board &board, int player_num, int r, int c) {
-    board.PlaceChess(player_num, r, c);
-    return 0;
-}
-
-int HeuristicMinMaxStrategy::RevertWrapper(Board &board, int r, int c) {
-    board.Revert(r, c);
-    return 0;
 }

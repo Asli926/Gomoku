@@ -38,9 +38,6 @@ private:
     static int AntiDiagonal(Board& board, const int& x, const int& y, std::string& s, const int& boardSize);
     int CountPoints(int player_num, const std::string& s, int& level_points);
 
-    int PlaceWrapper(Board& board, int player_num, int r, int c);
-    int RevertWrapper(Board& board, int r, int c);
-
 public:
     bool GetStrategy(Board *board, int player_num, int *px, int *py);
     ~HeuristicMinMaxStrategy();
