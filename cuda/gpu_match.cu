@@ -12,24 +12,24 @@ __constant__ int* dfas_p2;
 __constant__ int* pattern_size;
 __constant__ int* score_map;
 
-extern "C"
-int setPatternRelatedInfo(char* patterns_p1_, char* patterns_p2_, int* dfas_p1_, int* dfas_p2_,
-                                  int* pattern_size_, int* score_map_) {
-    cudaMemcpyToSymbol(patterns_p1, &patterns_p1_, sizeof(char) * 16 * 6, 0, cudaMemcpyHostToDevice);
-    cudaMemcpyToSymbol(patterns_p2, &patterns_p2_, sizeof(char) * 16 * 6, 0, cudaMemcpyHostToDevice);
-    cudaMemcpyToSymbol(dfas_p1, &dfas_p1_, sizeof(int) * 16 * 7, 0, cudaMemcpyHostToDevice);
-    cudaMemcpyToSymbol(dfas_p2, &dfas_p2_, sizeof(int) * 16 * 7, 0, cudaMemcpyHostToDevice);
-    cudaMemcpyToSymbol(pattern_size, &pattern_size_, sizeof(int) * 16, 0, cudaMemcpyHostToDevice);
-    cudaMemcpyToSymbol(score_map, &score_map_, sizeof(int) * 16, 0, cudaMemcpyHostToDevice);
-
-    return 0;
-}
-
 inline void checkCudaError(cudaError err, const char* loc) {
     if (err != cudaSuccess) {
         printf("[%s]CUDA runtime error: %s.\n", loc, cudaGetErrorString(err));
         fflush(stdout);
     }
+}
+
+extern "C"
+int setPatternRelatedInfo(char* patterns_p1_, char* patterns_p2_, int* dfas_p1_, int* dfas_p2_,
+                                  int* pattern_size_, int* score_map_) {
+    checkCudaError(cudaMemcpyToSymbol(patterns_p1, &patterns_p1_, sizeof(char) * 16 * 6, 0, cudaMemcpyHostToDevice));
+    checkCudaError(cudaMemcpyToSymbol(patterns_p2, &patterns_p2_, sizeof(char) * 16 * 6, 0, cudaMemcpyHostToDevice));
+    checkCudaError(cudaMemcpyToSymbol(dfas_p1, &dfas_p1_, sizeof(int) * 16 * 7, 0, cudaMemcpyHostToDevice));
+    checkCudaError(cudaMemcpyToSymbol(dfas_p2, &dfas_p2_, sizeof(int) * 16 * 7, 0, cudaMemcpyHostToDevice));
+    checkCudaError(cudaMemcpyToSymbol(pattern_size, &pattern_size_, sizeof(int) * 16, 0, cudaMemcpyHostToDevice));
+    checkCudaError(cudaMemcpyToSymbol(score_map, &score_map_, sizeof(int) * 16, 0, cudaMemcpyHostToDevice));
+
+    return 0;
 }
 
 __global__
