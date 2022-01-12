@@ -68,6 +68,10 @@ HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
         }
     }
 
+    // copy constant variable to the gpu
+    setPatternRelatedInfo(c_needle_list_two[0], c_needle_list_two[1],
+                          c_dfas_two[0], c_dfas_two[1], needle_size_list, score_map);
+
     // Test GPU function
     std::string cpu_lines{"00000010000000000000000000110000000000000000001110000000000000000011000000000000"};
     int cpu_line_sizes[4];
@@ -78,11 +82,6 @@ HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
         std::cout << "GPU TEST NOT PASSED!" << std::endl;
         exit(-1);
     }
-
-    // copy constant variable to the gpu
-    setPatternRelatedInfo(c_needle_list_two[0], c_needle_list_two[1],
-                          c_dfas_two[0], c_dfas_two[1], needle_size_list, score_map);
-
 }
 
 HeuristicMinMaxStrategy::~HeuristicMinMaxStrategy() {
