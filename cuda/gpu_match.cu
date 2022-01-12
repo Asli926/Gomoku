@@ -5,12 +5,12 @@
 #include <stdio.h>
 #include <cstdlib>
 
-__constant__ char* patterns_p1;
-__constant__ char* patterns_p2;
-__constant__ int* dfas_p1;
-__constant__ int* dfas_p2;
-__constant__ int* pattern_size;
-__constant__ int* score_map;
+__constant__ char patterns_p1[16 * 6];
+__constant__ char patterns_p2[16 * 6];
+__constant__ int dfas_p1[16 * 7];
+__constant__ int dfas_p2[16 * 7];
+__constant__ int pattern_size[16];
+__constant__ int score_map[16];
 
 inline void checkCudaError(cudaError err, const char* loc) {
     if (err != cudaSuccess) {
