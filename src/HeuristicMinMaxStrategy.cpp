@@ -73,11 +73,15 @@ HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
     int cpu_line_sizes[4];
     for (int u = 0; u < 4; u ++) cpu_line_sizes[u] = 15;
 
-    int gpu_res = EvaluateChessByLinesGPU(const_cast<char *>(cpu_lines.c_str()), cpu_line_sizes, 1);
+    int gpu_res = EvaluateChessScoreByLinesGPU(const_cast<char *>(cpu_lines.c_str()), cpu_line_sizes, 1);
     if (gpu_res <= 0 || gpu_res > 2000) {
         std::cout << "GPU TEST NOT PASSED!" << std::endl;
         exit(-1);
     }
+
+    // copy constant variable to the gpu
+    setPatternRelatedInfo(c_needle_list_two[0], c_needle_list_two[1],
+                          c_dfas_two[0], c_dfas_two[1], needle_size_list, score_map);
 
 }
 
@@ -124,10 +128,9 @@ int HeuristicMinMaxStrategy::GetLinesByChess(Board& board, int r, int c, char* l
     return 0;
 }
 
-int HeuristicMinMaxStrategy::EvaluateChessByLinesGPU(char* c_lines, int* c_line_size, int player_num) {
+int HeuristicMinMaxStrategy::EvaluateChessScoreByLinesGPU(char* c_lines, int* c_line_size, int player_num) {
     // std::cout << "EvaluateChessByLinesGPU: cuda function wrapper" << std::endl;
-    return match_count_multiple(c_lines, c_needle_list_two[player_num - 1], c_dfas_two[player_num - 1],
-                                needle_size_list, c_line_size, score_map);
+    return match_count_multiple(c_lines, c_line_size, player_num);
 }
 
 int HeuristicMinMaxStrategy::EvaluateChessByLines(const std::array<std::string, 4>& lines, int player_num) {
@@ -240,8 +243,7 @@ std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Boa
         int mc = move % board_size;
 
         GetLinesByChess(tmp_board, mr, mc, lines, line_sizes);
-        old_chess_score = EvaluateChessByLinesGPU(lines, line_sizes, player_num) -
-                EvaluateChessByLinesGPU(lines, line_sizes, opp_player_num);
+        old_chess_score = EvaluateChessScoreByLinesGPU(lines, line_sizes, player_num);
 
         if (max_layer)
             tmp_board.PlaceChess(player_num, mr, mc);
@@ -249,8 +251,7 @@ std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Boa
             tmp_board.PlaceChess(opp_player_num, mr, mc);
 
         GetLinesByChess(tmp_board, mr, mc, lines, line_sizes);
-        new_chess_score = EvaluateChessByLinesGPU(lines, line_sizes, player_num) -
-                EvaluateChessByLinesGPU(lines, line_sizes, opp_player_num);
+        new_chess_score = EvaluateChessScoreByLinesGPU(lines, line_sizes, player_num);
 
         tmp_board.Revert(mr, mc);
         delta_chess_score = new_chess_score - old_chess_score;

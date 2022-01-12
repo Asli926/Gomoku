@@ -5,6 +5,26 @@
 #include <stdio.h>
 #include <cstdlib>
 
+__constant__ char* patterns_p1;
+__constant__ char* patterns_p2;
+__constant__ int* dfas_p1;
+__constant__ int* dfas_p2;
+__constant__ int* patterns_size;
+__constant__ int* score_map;
+
+extern "C"
+int setPatternRelatedInfo(char* patterns_p1_, char* patterns_p2_, int* dfas_p1_, int* dfas_p2_,
+                                  int* patterns_size_, int* score_map_) {
+    cudaMemcpyToSymbol(patterns_p1, &patterns_p1_, sizeof(char) * 16 * 6, 0, cudaMemcpyHostToDevice);
+    cudaMemcpyToSymbol(patterns_p2, &patterns_p2_, sizeof(char) * 16 * 6, 0, cudaMemcpyHostToDevice);
+    cudaMemcpyToSymbol(dfas_p1, &dfas_p1_, sizeof(int) * 16 * 7, 0, cudaMemcpyHostToDevice);
+    cudaMemcpyToSymbol(dfas_p2, &dfas_p2_, sizeof(int) * 16 * 7, 0, cudaMemcpyHostToDevice);
+    cudaMemcpyToSymbol(patterns_size, &patterns_size_, sizeof(int) * 16, 0, cudaMemcpyHostToDevice);
+    cudaMemcpyToSymbol(score_map, &score_map_, sizeof(int) * 16, 0, cudaMemcpyHostToDevice);
+
+    return 0;
+}
+
 inline void checkCudaError(cudaError err, const char* loc) {
     if (err != cudaSuccess) {
         printf("[%s]CUDA runtime error: %s.\n", loc, cudaGetErrorString(err));
@@ -13,17 +33,26 @@ inline void checkCudaError(cudaError err, const char* loc) {
 }
 
 __global__
-void match_count_kernel(int *res, char* lines, char* patterns, int* dfas, int* pattern_size, int* line_size, int* score_map) {
-    __shared__ int temp[64];
+void match_count_kernel(int *res, char* lines, int* line_size, int player_num) {
+    __shared__ int temp[128];
+    __shared__ int result[2];
+    int wtid = blockIdx.x * blockDim.x + threadIdx.x;
+    temp[wtid] = 0;
+
     int tid = threadIdx.x;
-    temp[tid] = 0;
+    int threadId = tid % 16, blockId = tid / 16;
+
+    char *pattern = patterns_p2 + 6 * threadId;
+    int *nxt = dfas_p2 + 7 * threadId;
+
+    if (blockIdx.x == 0 && player_num == 1 || blockIdx.x == 1 && player_num == 2) {
+        pattern = patterns_p1 + 6 * threadId;
+        nxt = dfas_p1 + 7 * threadId;
+    }
 
     int i = 0, j;
-    int threadId = tid % 16, blockId = tid / 16;
     int m = pattern_size[threadId], n = line_size[blockId];
     char *line = lines + (20 * blockId);
-    char *pattern = patterns + 6 * threadId;
-    int *nxt = dfas + 7 * threadId;
 
     // i is the pointer of 'line'
     // j is the pointer of 'pattern'
@@ -43,7 +72,7 @@ void match_count_kernel(int *res, char* lines, char* patterns, int* dfas, int* p
         // right after a single search
         // If j == m: we have found one match, so res ++
         if (j == m) {
-            temp[tid] += score_map[threadId];
+            temp[wtid] += score_map[threadId];
             i = i - j + 1;
             continue;
         }
@@ -54,45 +83,42 @@ void match_count_kernel(int *res, char* lines, char* patterns, int* dfas, int* p
 
     __syncthreads(); // synchronize all threads
 
-    if (tid == 0)
+    if (wtid == 0)
     {
         int sum = 0;
         for (int t = 0; t < 64; t++)
         {
             sum += temp[t];
         }
-        *res = sum;
+        result[0] = sum;
     }
 
+    if (wtid == 64) {
+        int sum = 0;
+        for (int t = 64; t < 128; t++)
+        {
+            sum += temp[t];
+        }
+        result[1] = sum;
+    }
+
+    *res = result[0] - result[1];
 }
 
 
 extern "C"
-int match_count_multiple(char* lines, char* patterns, int* dfas, int* pattern_size, int* line_size, int* score_map) {
+int match_count_multiple(char* lines, int* line_size, int player_num) {
 
-    char *dev_lines, *dev_patterns;
-    int *dev_dfas;
-    int *dev_pattern_size, *dev_line_size, *dev_score_map, *dev_res;
+    char *dev_lines;
+    int *dev_line_size, *dev_res;
 
     /* =============== Malloc memory on GPU =============== */
 
     // malloc lines (4 lines of 20 characters)
     checkCudaError(cudaMalloc((void**)&dev_lines, sizeof(char) * 4 * 20), "Malloc lines");
 
-    // malloc patterns (16 patterns of 6 characters)
-    checkCudaError(cudaMalloc((void**)&dev_patterns, sizeof(char) * 16 * 6), "Malloc patterns");
-
-    // malloc dfas (16 dfa arrays of 7 integers)
-    checkCudaError(cudaMalloc((void**)&dev_dfas, sizeof(int) * 16 * 7), "Malloc dfas");
-
-    // malloc pattern_size
-    checkCudaError(cudaMalloc((void**)&dev_pattern_size, sizeof(int) * 16), "Malloc pattern size");
-
     // malloc line_size
     checkCudaError(cudaMalloc((void**)&dev_line_size, sizeof(int) * 4), "Malloc line size");
-
-    // malloc score_map
-    checkCudaError(cudaMalloc((void**)&dev_score_map, sizeof(int) * 16), "Malloc score map");
 
     // malloc result
     checkCudaError(cudaMalloc((void**)&dev_res, sizeof(int)), "Malloc result");
@@ -101,33 +127,20 @@ int match_count_multiple(char* lines, char* patterns, int* dfas, int* pattern_si
     /* =============== Copy memory from RAM to GPU device =============== */
 
     checkCudaError(cudaMemcpy(dev_lines, lines, sizeof(char) * 4 * 20, cudaMemcpyHostToDevice), "copy lines");
-    checkCudaError(cudaMemcpy(dev_patterns, patterns, sizeof(char) * 6 * 16, cudaMemcpyHostToDevice), "copy patterns");
-    checkCudaError(cudaMemcpy(dev_dfas, dfas, sizeof(int) * 16 * 7, cudaMemcpyHostToDevice), "copy dfas");
-
-    checkCudaError(cudaMemcpy(dev_pattern_size, pattern_size, sizeof(int) * 16, cudaMemcpyHostToDevice), "copy pattern size");
     checkCudaError(cudaMemcpy(dev_line_size, line_size, sizeof(int) * 4, cudaMemcpyHostToDevice), "copy line size");
-    checkCudaError(cudaMemcpy(dev_score_map, score_map, sizeof(int) * 16, cudaMemcpyHostToDevice), "copy score map");
 
     int *res = (int*) malloc(sizeof(int));
 
-    match_count_kernel<<<1, 64>>>(dev_res, dev_lines, dev_patterns, dev_dfas, dev_pattern_size, dev_line_size, dev_score_map);
-//    cudaDeviceSynchronize();
+    match_count_kernel<<<2, 64>>>(dev_res, dev_lines, dev_line_size, player_num);
     checkCudaError(cudaMemcpy(res, dev_res, sizeof(int), cudaMemcpyDeviceToHost), "copy result from GPU");
+
     int out = *res;
-//    if (out != 0) {
-//        printf("out: %d\n", out);
-//        fflush(stdout);
-//    }
 
     /* =============== Free memory =============== */
 
     checkCudaError(cudaFree(dev_lines), "free lines");
-    checkCudaError(cudaFree(dev_patterns), "free patterns");
-    checkCudaError(cudaFree(dev_dfas), "free dfas");
     checkCudaError(cudaFree(dev_res), "free res");
     checkCudaError(cudaFree(dev_line_size), "free line size");
-    checkCudaError(cudaFree(dev_pattern_size), "free pattern size");
-    checkCudaError(cudaFree(dev_score_map), "free score map");
 
     free(res);
 

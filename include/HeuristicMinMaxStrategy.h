@@ -29,7 +29,7 @@ private:
     // int UpdateScore(Board& board, int player_num, int score, int r, int c);
     int GetLinesByChess(Board& board, int r, int c, char* lines, int* line_sizes);
     std::pair<int, int> EvalTotalPoints(Board board, int player_num, int cur_depth, int alpha, int beta, int score);
-    int EvaluateChessByLinesGPU(char* c_lines, int* c_line_size, int);
+    int EvaluateChessScoreByLinesGPU(char* c_lines, int* c_line_size, int);
     int EvaluateChessByLines(const std::array<std::string, 4>&, int);
     int EvaluateBoard(Board& board, int player_num);
     std::vector<std::pair<int, int>> HeuristicNextMoves(Board& board, int player_num, bool max_layer);
