@@ -22,12 +22,12 @@ inline void checkCudaError(cudaError err, const char* loc) {
 extern "C"
 int setPatternRelatedInfo(char* patterns_p1_, char* patterns_p2_, int* dfas_p1_, int* dfas_p2_,
                                   int* pattern_size_, int* score_map_) {
-    checkCudaError(cudaMemcpyToSymbol(patterns_p1, &patterns_p1_, sizeof(char) * 16 * 6, 0, cudaMemcpyHostToDevice));
-    checkCudaError(cudaMemcpyToSymbol(patterns_p2, &patterns_p2_, sizeof(char) * 16 * 6, 0, cudaMemcpyHostToDevice));
-    checkCudaError(cudaMemcpyToSymbol(dfas_p1, &dfas_p1_, sizeof(int) * 16 * 7, 0, cudaMemcpyHostToDevice));
-    checkCudaError(cudaMemcpyToSymbol(dfas_p2, &dfas_p2_, sizeof(int) * 16 * 7, 0, cudaMemcpyHostToDevice));
-    checkCudaError(cudaMemcpyToSymbol(pattern_size, &pattern_size_, sizeof(int) * 16, 0, cudaMemcpyHostToDevice));
-    checkCudaError(cudaMemcpyToSymbol(score_map, &score_map_, sizeof(int) * 16, 0, cudaMemcpyHostToDevice));
+    checkCudaError(cudaMemcpyToSymbol(patterns_p1, &patterns_p1_, sizeof(char) * 16 * 6, 0, cudaMemcpyHostToDevice), "constant patterns1");
+    checkCudaError(cudaMemcpyToSymbol(patterns_p2, &patterns_p2_, sizeof(char) * 16 * 6, 0, cudaMemcpyHostToDevice), "constant patterns2");
+    checkCudaError(cudaMemcpyToSymbol(dfas_p1, &dfas_p1_, sizeof(int) * 16 * 7, 0, cudaMemcpyHostToDevice), "constant dfa1");
+    checkCudaError(cudaMemcpyToSymbol(dfas_p2, &dfas_p2_, sizeof(int) * 16 * 7, 0, cudaMemcpyHostToDevice), "constant dfa2");
+    checkCudaError(cudaMemcpyToSymbol(pattern_size, &pattern_size_, sizeof(int) * 16, 0, cudaMemcpyHostToDevice), "constant pattern size");
+    checkCudaError(cudaMemcpyToSymbol(score_map, &score_map_, sizeof(int) * 16, 0, cudaMemcpyHostToDevice), "constant score map");
 
     return 0;
 }
