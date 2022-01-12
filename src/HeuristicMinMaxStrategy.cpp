@@ -6,6 +6,7 @@
 #include <climits>
 #include <algorithm>
 #include <iostream>
+#include <utility>
 #include "../cuda/gpu_match.cuh"
 
 HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
@@ -45,19 +46,46 @@ HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
 
     total_depth = _total_depth;
 
-    // Test GPU function
-    std::array<std::string, 4> cpu_lines;
-    cpu_lines[0] = "000000100000000";
-    cpu_lines[1] = "000000110000000";
-    cpu_lines[2] = "000000111000000";
-    cpu_lines[3] = "000000110000000";
+    c_needle_list_two = new char*[2];
+    c_needle_list_two[0] = new char[16 * 6];
+    c_needle_list_two[1] = new char[16 * 6];
 
-    int gpu_res = EvaluateChessByLinesGPU(cpu_lines, 1);
-    if (gpu_res <= 0) {
+    for (int k = 0; k < 16; k ++) {
+        memcpy((void*) &c_needle_list_two[0][6 * k], player_needle_lists[0][k].c_str(),
+               player_needle_lists[0][k].size());
+        memcpy((void*) &c_needle_list_two[1][6 * k], player_needle_lists[1][k].c_str(),
+               player_needle_lists[1][k].size());
+    }
+
+    c_dfas_two = new int*[2];
+    c_dfas_two[0] = new int[16 * 7];
+    c_dfas_two[1] = new int[16 * 7];
+
+    for (int u = 0; u < 16; u ++) {
+        for (int w = 0; w < 7; w ++) {
+            c_dfas_two[0][u * 7 + w] = player_dfa_lists[0][u][w];
+            c_dfas_two[1][u * 7 + w] = player_dfa_lists[1][u][w];
+        }
+    }
+
+    // Test GPU function
+    std::string cpu_lines{"00000010000000000000000000110000000000000000001110000000000000000011000000000000"};
+    int cpu_line_sizes[4];
+    for (int u = 0; u < 4; u ++) cpu_line_sizes[u] = 15;
+
+    int gpu_res = EvaluateChessByLinesGPU(const_cast<char *>(cpu_lines.c_str()), cpu_line_sizes, 1);
+    if (gpu_res <= 0 || gpu_res > 2000) {
         std::cout << "GPU TEST NOT PASSED!" << std::endl;
         exit(-1);
     }
 
+}
+
+HeuristicMinMaxStrategy::~HeuristicMinMaxStrategy() {
+    delete[] needle_size_list;
+    delete[] player1_dfa_list;
+    delete[] player2_dfa_list;
+    delete[] score_map;
 }
 
 /* only translate 0 - 9 to its char type */
@@ -65,59 +93,41 @@ inline char HeuristicMinMaxStrategy::Int2Char(int num) {
     return (char) (num - 0 + (int)('0'));
 }
 
-std::array<std::string, 4> HeuristicMinMaxStrategy::GetLinesByChess(Board& board, int r, int c) {
+int HeuristicMinMaxStrategy::GetLinesByChess(Board& board, int r, int c, char* lines, int* line_sizes) {
     int board_size = board.GetSize();
-    std::array<std::string, 4> lines;
-    for (int i = 0; i < 4; i ++) lines[i].reserve(board_size);
-
+    int pLines = 0;
 
     for (int i = 0; i < board_size; i ++) {
-        lines[0] += Int2Char(board.GetChess(i, c));
+        lines[pLines++] = Int2Char(board.GetChess(i, c));
     }
+    line_sizes[0] = pLines; pLines = 20;
 
     for (int j = 0; j < board_size; j ++) {
-        lines[1] += Int2Char(board.GetChess(r, j));
+        lines[pLines++] = Int2Char(board.GetChess(r, j));
     }
+    line_sizes[1] = pLines; pLines = 40;
 
     int min_rc = std::min(r, c);
     for (int i = r - min_rc, j = c - min_rc;
     i < board_size && j < board_size;
     i ++, j ++) {
-        lines[2] += Int2Char(board.GetChess(i, j));
+        lines[pLines++] = Int2Char(board.GetChess(i, j));
     }
+    line_sizes[2] = pLines; pLines = 60;
 
     int dr = std::min(r, board_size - 1 - c);
     for (int i = r - dr, j = c + dr; i < board_size && j >= 0; i ++, j --) {
-        lines[3] += Int2Char(board.GetChess(i, j));
+        lines[pLines++] = Int2Char(board.GetChess(i, j));
     }
+    line_sizes[3] = pLines;
 
-    return lines;
+    return 0;
 }
 
-int HeuristicMinMaxStrategy::EvaluateChessByLinesGPU(const std::array<std::string, 4>& lines, int player_num) {
+int HeuristicMinMaxStrategy::EvaluateChessByLinesGPU(char* c_lines, int* c_line_size, int player_num) {
     // std::cout << "EvaluateChessByLinesGPU: cuda function wrapper" << std::endl;
-    char c_lines[4 * 20];
-    char c_needle_list[16 * 6];
-    int c_line_size[4];
-    int c_dfas[16 * 7];
-
-    for (int k = 0; k < 4; k ++) {
-        memcpy((void*) &c_lines[20 * k], lines[k].c_str(), lines[k].size());
-        c_line_size[k] = lines[k].size();
-    }
-
-    for (int k = 0; k < 16; k ++) {
-        memcpy((void*) &c_needle_list[6 * k], player_needle_lists[player_num - 1][k].c_str(),
-               player_needle_lists[player_num - 1][k].size());
-    }
-
-    for (int u = 0; u < 16; u ++) {
-        for (int w = 0; w < 7; w ++) {
-            c_dfas[u * 7 + w] = player_dfa_lists[player_num - 1][u][w];
-        }
-    }
-
-    return match_count_multiple(c_lines, c_needle_list, c_dfas, needle_size_list, c_line_size, score_map);
+    return match_count_multiple(c_lines, c_needle_list_two[player_num - 1], c_dfas_two[player_num - 1],
+                                needle_size_list, c_line_size, score_map);
 }
 
 int HeuristicMinMaxStrategy::EvaluateChessByLines(const std::array<std::string, 4>& lines, int player_num) {
@@ -222,29 +232,33 @@ std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Boa
     int old_chess_score, new_chess_score, delta_chess_score;
     std::vector<std::pair<int, int>> possible_moves; // (score, location)
     std::vector<std::pair<int, int>> res;
-    std::array<std::string, 4> lines;
+    char* lines = new char[80];
+    int* line_sizes = new int[4];
 
     for (int move : board.AvailableChildren(1)) {
         int mr = move / board_size;
         int mc = move % board_size;
 
-        lines = GetLinesByChess(tmp_board, mr, mc);
-        old_chess_score = EvaluateChessByLinesGPU(lines, player_num) -
-                EvaluateChessByLinesGPU(lines, opp_player_num);
+        GetLinesByChess(tmp_board, mr, mc, lines, line_sizes);
+        old_chess_score = EvaluateChessByLinesGPU(lines, line_sizes, player_num) -
+                EvaluateChessByLinesGPU(lines, line_sizes, opp_player_num);
 
         if (max_layer)
             tmp_board.PlaceChess(player_num, mr, mc);
         else
             tmp_board.PlaceChess(opp_player_num, mr, mc);
 
-        lines = GetLinesByChess(tmp_board, mr, mc);
-        new_chess_score = EvaluateChessByLinesGPU(lines, player_num) -
-                EvaluateChessByLinesGPU(lines, opp_player_num);
+        GetLinesByChess(tmp_board, mr, mc, lines, line_sizes);
+        new_chess_score = EvaluateChessByLinesGPU(lines, line_sizes, player_num) -
+                EvaluateChessByLinesGPU(lines, line_sizes, opp_player_num);
 
         RevertWrapper(tmp_board, mr, mc);
         delta_chess_score = new_chess_score - old_chess_score;
         possible_moves.emplace_back(std::make_pair(delta_chess_score, move));
     }
+
+    delete[] lines;
+    delete[] line_sizes;
 
     if (max_layer)
         std::sort(possible_moves.begin(), possible_moves.end(), std::greater<>());
