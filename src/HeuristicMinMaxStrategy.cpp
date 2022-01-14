@@ -226,8 +226,8 @@ int HeuristicMinMaxStrategy::EvaluateBoard(Board &board, int player_num) {
 }
 
 std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Board& board, int player_num, bool max_layer) {
-    int *scores = malloc(sizeof(60) * int);
-    int *locations = malloc(sizeof(60) * int);
+    int *scores = (int*) malloc(sizeof(int) * 60);
+    int *locations = (int*) malloc(sizeof(int) * 60);
     int moves_count = 0;
     heuristic_moves_cpu(scores, locations, &moves_count, board.GetRawBoard(), player_num,
                         c_needle_list_two[0], c_needle_list_two[1],
@@ -236,6 +236,7 @@ std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Boa
 
     std::vector<std::pair<int, int>> possible_moves; // (score, location)
     std::vector<std::pair<int, int>> res; // (score, location)
+    possible_moves.reserve(moves_count);
     for (int i = 0; i < moves_count; i ++) {
         possible_moves.emplace_back(std::make_pair(scores[i], locations[i]));
     }
