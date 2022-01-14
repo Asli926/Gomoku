@@ -83,7 +83,7 @@ void heuristic_moves_kernel(int *res, int *next_locations, int *moves_count,
         }
         line_size[t_size_ini] = pLines; pLines = t_plines_ini + 20;
 
-        for (int j = 0; j < board_size; j ++) {
+        for (int j = 0; j < BOARD_SIZE; j ++) {
             lines[pLines++] = INT2CHAR(board[r * BOARD_SIZE + j]);
         }
         line_size[t_size_ini + 1] = pLines; pLines = t_plines_ini + 40;
@@ -187,7 +187,7 @@ void heuristic_moves_kernel(int *res, int *next_locations, int *moves_count,
         line_size[t_size_ini] = pLines;
         pLines = t_plines_ini + 20;
 
-        for (int j = 0; j < board_size; j++) {
+        for (int j = 0; j < BOARD_SIZE; j++) {
             lines[pLines++] = INT2CHAR(local_board[r * BOARD_SIZE + j]);
         }
         line_size[t_size_ini + 1] = pLines;
@@ -269,7 +269,7 @@ void heuristic_moves_kernel(int *res, int *next_locations, int *moves_count,
 
     if (tid == 0) {
         *moves_count = num_next_loc;
-        for (int i = 0; i < num_next_loc; i ++) *res[i] = score[i];
+        for (int i = 0; i < num_next_loc; i ++) res[i] = score[i];
     }
 }
 
@@ -309,7 +309,7 @@ int heuristic_moves_cpu(int *res, int *next_locations, int *moves_count,
     checkCudaError(cudaMemcpy(dev_score_map, score_map, sizeof(int) * 16, cudaMemcpyHostToDevice), "copy score map");
 
     /* =============== Call kernel function =============== */
-    heuristic_moves_kernel<<<1, BOARD_SIZE * BOARD_SIZE>>>(dev_res, dev_next_locations, dev_moves_count, player_num, dev_board, dev_patterns_p1,
+    heuristic_moves_kernel<<<1, BOARD_SIZE * BOARD_SIZE>>>(dev_res, dev_next_locations, dev_moves_count, dev_board, player_num, dev_patterns_p1,
                                                            dev_patterns_p2, dev_dfas_p1, dev_dfas_p2, dev_pattern_size,
                                                            dev_score_map, max_layer);
 
