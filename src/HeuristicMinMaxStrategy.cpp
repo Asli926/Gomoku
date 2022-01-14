@@ -8,6 +8,7 @@
 #include <iostream>
 #include <utility>
 #include "../cuda/gpu_match.cuh"
+#include "../cuda/heuristic_moves.cuh"
 
 HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
     std::cout << "HeuristicMinMaxStrategy: Construction" << std::endl;
@@ -73,12 +74,10 @@ HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
                           c_dfas_two[0], c_dfas_two[1], needle_size_list, score_map);
 
     // Test GPU function
-    std::string cpu_lines{"00000010000000000000000000110000000000000000001110000000000000000011000000000000"};
-    int cpu_line_sizes[4];
-    for (int u = 0; u < 4; u ++) cpu_line_sizes[u] = 15;
-
-    int gpu_res = EvaluateChessScoreByLinesGPU(const_cast<char *>(cpu_lines.c_str()), cpu_line_sizes, 1);
-    if (gpu_res <= 0 || gpu_res > 2000) {
+    Board board_test{15};
+    board_test.PlaceChess(2, 7, 7);
+    auto mov_paris = HeuristicNextMoves(board_test, 1, true);
+    if (!(mov_paris[0].first < 2000 && mov_paris[0].first > -2000)) {
         std::cout << "GPU TEST NOT PASSED!" << std::endl;
         exit(-1);
     }
@@ -227,45 +226,26 @@ int HeuristicMinMaxStrategy::EvaluateBoard(Board &board, int player_num) {
 }
 
 std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Board& board, int player_num, bool max_layer) {
-    // std::cout << "HeuristicNextMoves: entering" << std::endl;
-    Board tmp_board{board};
-    int board_size = board.GetSize();
-    int opp_player_num = 3 - player_num;
-    int old_chess_score, new_chess_score, delta_chess_score;
+    int *scores = malloc(sizeof(60) * int);
+    int *locations = malloc(sizeof(60) * int);
+    int moves_count = 0;
+    heuristic_moves_cpu(scores, locations, &moves_count, board.GetRawBoard(), player_num,
+                        c_needle_list_two[0], c_needle_list_two[1],
+                        c_dfas_two[0], c_dfas_two[1],
+                        needle_size_list, score_map, max_layer ? 1 : 0);
+
     std::vector<std::pair<int, int>> possible_moves; // (score, location)
-    std::vector<std::pair<int, int>> res;
-    char* lines = new char[80];
-    int* line_sizes = new int[4];
-
-    for (int move : board.AvailableChildren(1)) {
-        int mr = move / board_size;
-        int mc = move % board_size;
-
-        GetLinesByChess(tmp_board, mr, mc, lines, line_sizes);
-        old_chess_score = EvaluateChessScoreByLinesGPU(lines, line_sizes, player_num);
-
-        if (max_layer)
-            tmp_board.PlaceChess(player_num, mr, mc);
-        else
-            tmp_board.PlaceChess(opp_player_num, mr, mc);
-
-        GetLinesByChess(tmp_board, mr, mc, lines, line_sizes);
-        new_chess_score = EvaluateChessScoreByLinesGPU(lines, line_sizes, player_num);
-
-        tmp_board.Revert(mr, mc);
-        delta_chess_score = new_chess_score - old_chess_score;
-        possible_moves.emplace_back(std::make_pair(delta_chess_score, move));
+    std::vector<std::pair<int, int>> res; // (score, location)
+    for (int i = 0; i < moves_count; i ++) {
+        possible_moves.emplace_back(std::make_pair(scores[i], locations[i]));
     }
-
-    delete[] lines;
-    delete[] line_sizes;
 
     if (max_layer)
         std::sort(possible_moves.begin(), possible_moves.end(), std::greater<>());
     else
         std::sort(possible_moves.begin(), possible_moves.end(), std::less<>());
 
-    for (int i = 0; i < std::min(board_size, (int)possible_moves.size()); i ++) {
+    for (int i = 0; i < std::min(board.GetSize(), (int)possible_moves.size()); i ++) {
         res.emplace_back(possible_moves[i]);
     }
     return res;

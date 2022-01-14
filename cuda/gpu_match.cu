@@ -85,21 +85,21 @@ void match_count_kernel(int *res, char* lines, int* line_size, int player_num) {
 
     if (wtid == 0)
     {
-        int sum = 0;
+        int sum1 = 0;
         for (int t = 0; t < 64; t++)
         {
-            sum += temp[t];
+            sum1 += temp[t];
         }
-        result[0] = sum;
+        result[0] = sum1;
     }
 
     if (wtid == 64) {
-        int sum = 0;
+        int sum2 = 0;
         for (int t = 64; t < 128; t++)
         {
-            sum += temp[t];
+            sum2 += temp[t];
         }
-        result[1] = sum;
+        result[1] = sum2;
     }
 
     *res = result[0] - result[1];

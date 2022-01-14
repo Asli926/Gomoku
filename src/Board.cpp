@@ -161,4 +161,8 @@ int Board::Revert(int x, int y) {
     return 0;
 }
 
+int* Board::GetRawBoard() {
+    return board_;
+}
+
 

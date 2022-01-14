@@ -41,6 +41,9 @@ public:
     /* print the chess board. */
     int PrintBoard();
 
+    /* get raw board for gpu purpose */
+    int* GetRawBoard();
+
     /* Get next possible moves */
     std::unordered_set<int> AvailableChildren(int dist=1);
 
