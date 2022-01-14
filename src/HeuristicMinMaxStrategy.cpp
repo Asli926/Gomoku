@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iostream>
 #include <utility>
+#include <ctime>
 #include "../cuda/gpu_match.cuh"
 #include "../cuda/heuristic_moves.cuh"
 
@@ -70,8 +71,8 @@ HeuristicMinMaxStrategy::HeuristicMinMaxStrategy(int _total_depth) {
     }
 
     // copy constant variable to the gpu
-    setPatternRelatedInfo(c_needle_list_two[0], c_needle_list_two[1],
-                          c_dfas_two[0], c_dfas_two[1], needle_size_list, score_map);
+//    setPatternRelatedInfo(c_needle_list_two[0], c_needle_list_two[1],
+//                          c_dfas_two[0], c_dfas_two[1], needle_size_list, score_map);
 
     // Test GPU function
     Board board_test{15};
@@ -126,22 +127,22 @@ int HeuristicMinMaxStrategy::GetLinesByChess(Board& board, int r, int c, char* l
     return 0;
 }
 
-int HeuristicMinMaxStrategy::EvaluateChessScoreByLinesGPU(char* c_lines, int* c_line_size, int player_num) {
-    // std::cout << "EvaluateChessByLinesGPU: cuda function wrapper" << std::endl;
-    return match_count_multiple(c_lines, c_line_size, player_num);
-}
+//int HeuristicMinMaxStrategy::EvaluateChessScoreByLinesGPU(char* c_lines, int* c_line_size, int player_num) {
+//    // std::cout << "EvaluateChessByLinesGPU: cuda function wrapper" << std::endl;
+//    return match_count_multiple(c_lines, c_line_size, player_num);
+//}
 
-int HeuristicMinMaxStrategy::EvaluateChessByLines(const std::array<std::string, 4>& lines, int player_num) {
-    int res = 0;
-    for (const auto& li: lines) {
-        for (int nx = 0; nx < player_needle_lists[player_num - 1].size(); nx ++) {
-            res += match_count(li, player_needle_lists[player_num - 1][nx],
-                               player_dfa_lists[player_num - 1][nx]) * score_map[nx];
-        }
-    }
-
-    return res;
-}
+//int HeuristicMinMaxStrategy::EvaluateChessByLines(const std::array<std::string, 4>& lines, int player_num) {
+//    int res = 0;
+//    for (const auto& li: lines) {
+//        for (int nx = 0; nx < player_needle_lists[player_num - 1].size(); nx ++) {
+//            res += match_count(li, player_needle_lists[player_num - 1][nx],
+//                               player_dfa_lists[player_num - 1][nx]) * score_map[nx];
+//        }
+//    }
+//
+//    return res;
+//}
 
 int HeuristicMinMaxStrategy::CountPoints(int player_num, const std::string& s, int& level_points) {
     for (int i = 0; i < player1_needle_list.size(); i ++) {
@@ -229,11 +230,12 @@ std::vector<std::pair<int, int>> HeuristicMinMaxStrategy::HeuristicNextMoves(Boa
     int *scores = (int*) malloc(sizeof(int) * 60);
     int *locations = (int*) malloc(sizeof(int) * 60);
     int moves_count = 0;
+    clock_t start = clock();
     heuristic_moves_cpu(scores, locations, &moves_count, board.GetRawBoard(), player_num,
                         c_needle_list_two[0], c_needle_list_two[1],
                         c_dfas_two[0], c_dfas_two[1],
                         needle_size_list, score_map, max_layer ? 1 : 0);
-
+    printf("gpu call time: %.4f (s)\n", (clock() - start) / (double) CLOCKS_PER_SEC);
     std::vector<std::pair<int, int>> possible_moves; // (score, location)
     std::vector<std::pair<int, int>> res; // (score, location)
     possible_moves.reserve(moves_count);
